@@ -1,0 +1,1727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VANISHING — A Global Endangered Species Atlas</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════
+   VARIABLES & RESET
+══════════════════════════════════════════ */
+:root {
+  --ink: #0a0b08;
+  --paper: #f5f0e8;
+  --paper2: #ede8dc;
+  --cream: #faf7f0;
+  --red: #c0392b;
+  --red-dim: rgba(192,57,43,0.12);
+  --orange: #d35400;
+  --amber: #e67e22;
+  --gold: #c9a84c;
+  --forest: #2d5a27;
+  --moss: #4a7c59;
+  --sage: #8aad8f;
+  --ocean: #1a4a6b;
+  --sky: #2980b9;
+  --ivory: #f0ead6;
+  --bone: #d4cbb8;
+  --warm-gray: #8a8070;
+  --px: clamp(20px, 5vw, 80px);
+  --accent: var(--red);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;font-size:16px;}
+body{background:var(--ink);color:var(--paper);font-family:'Lora',serif;overflow-x:hidden;cursor:none;}
+
+/* ══════════════════════════════════════════
+   CURSOR
+══════════════════════════════════════════ */
+#cursor{width:6px;height:6px;background:var(--paper);border-radius:50%;position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:difference;transition:width .2s,height .2s;}
+#cursor-ring{width:32px;height:32px;border:1px solid rgba(245,240,232,0.4);border-radius:50%;position:fixed;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:left .12s ease,top .12s ease,width .2s,height .2s;pointer-events:none;}
+body:has(.species-card:hover) #cursor{width:16px;height:16px;}
+body:has(.species-card:hover) #cursor-ring{width:56px;height:56px;opacity:.2;}
+
+/* ══════════════════════════════════════════
+   NOISE OVERLAY
+══════════════════════════════════════════ */
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='.035'/%3E%3C/svg%3E");pointer-events:none;z-index:1;opacity:.6;}
+
+/* ══════════════════════════════════════════
+   SECTION BASE
+══════════════════════════════════════════ */
+.section{position:relative;z-index:2;}
+
+/* ══════════════════════════════════════════
+   NAV
+══════════════════════════════════════════ */
+#nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;padding:20px var(--px);transition:background .4s,backdrop-filter .4s;}
+#nav.solid{background:rgba(10,11,8,.96);backdrop-filter:blur(8px);}
+.nav-brand{font-family:'Playfair Display',serif;font-size:15px;letter-spacing:.2em;text-transform:uppercase;color:var(--paper);text-decoration:none;font-weight:700;}
+.nav-brand em{color:var(--red);font-style:normal;}
+.nav-links{display:flex;gap:28px;list-style:none;}
+.nav-links a{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--bone);text-decoration:none;transition:color .3s;}
+.nav-links a:hover{color:var(--red);}
+.nav-tag{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.15em;border:1px solid var(--red);color:var(--red);padding:7px 14px;text-transform:uppercase;text-decoration:none;transition:all .3s;}
+.nav-tag:hover{background:var(--red);color:var(--paper);}
+.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:none;padding:4px;}
+.hamburger span{width:22px;height:1px;background:var(--paper);display:block;transition:all .3s;}
+.mob-nav{display:none;position:fixed;inset:0;background:var(--ink);z-index:490;flex-direction:column;align-items:center;justify-content:center;gap:28px;}
+.mob-nav.open{display:flex;}
+.mob-nav a{font-family:'Playfair Display',serif;font-size:clamp(28px,6vw,48px);font-weight:400;color:var(--paper);text-decoration:none;transition:color .3s;}
+.mob-nav a:hover{color:var(--red);}
+.mob-close{position:absolute;top:24px;right:var(--px);background:none;border:none;color:var(--bone);font-size:24px;cursor:none;}
+
+/* ══════════════════════════════════════════
+   HERO
+══════════════════════════════════════════ */
+#hero{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 var(--px) clamp(48px,6vw,80px);position:relative;overflow:hidden;}
+#hero-canvas{position:absolute;inset:0;width:100%;height:100%;}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,11,8,1) 0%,rgba(10,11,8,.6) 40%,rgba(10,11,8,.1) 100%);}
+.hero-content{position:relative;z-index:3;}
+.hero-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.5em;text-transform:uppercase;color:var(--red);margin-bottom:20px;opacity:0;animation:fadeUp .8s .2s forwards;}
+.hero-title{font-family:'Playfair Display',serif;font-size:clamp(64px,14vw,180px);font-weight:900;line-height:.85;letter-spacing:-.03em;opacity:0;animation:fadeUp 1s .4s forwards;}
+.hero-title span{display:block;}
+.hero-title .ital{font-style:italic;color:var(--red);}
+.hero-subtitle{font-family:'Lora',serif;font-size:clamp(14px,1.8vw,20px);font-weight:400;font-style:italic;color:var(--bone);max-width:520px;line-height:1.8;margin-top:24px;opacity:0;animation:fadeUp .8s .8s forwards;}
+.hero-scroll{position:absolute;bottom:clamp(24px,4vw,48px);right:var(--px);display:flex;flex-direction:column;align-items:center;gap:8px;opacity:0;animation:fadeUp .8s 1.2s forwards;}
+.hero-scroll-line{width:1px;height:60px;background:linear-gradient(to bottom,var(--red),transparent);animation:scrollPulse 2s infinite;}
+.hero-scroll-txt{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.35em;color:var(--warm-gray);text-transform:uppercase;writing-mode:vertical-rl;}
+.hero-counter{position:absolute;top:50%;right:var(--px);transform:translateY(-50%);text-align:right;opacity:0;animation:fadeUp .8s 1s forwards;}
+.hero-counter-num{font-family:'Playfair Display',serif;font-size:clamp(48px,7vw,88px);font-weight:700;color:var(--red);line-height:1;}
+.hero-counter-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.25em;color:var(--warm-gray);text-transform:uppercase;margin-top:4px;}
+
+/* ══════════════════════════════════════════
+   CRISIS BAR
+══════════════════════════════════════════ */
+.crisis-bar{background:var(--red);padding:14px var(--px);display:flex;gap:clamp(16px,3vw,48px);overflow-x:auto;scrollbar-width:none;align-items:center;}
+.crisis-bar::-webkit-scrollbar{display:none;}
+.crisis-stat{flex-shrink:0;display:flex;align-items:center;gap:12px;}
+.crisis-num{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--paper);line-height:1;}
+.crisis-lbl{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.2em;color:rgba(245,240,232,.7);text-transform:uppercase;line-height:1.6;}
+.crisis-div{width:1px;height:32px;background:rgba(245,240,232,.25);flex-shrink:0;}
+
+/* ══════════════════════════════════════════
+   SECTION HEADERS (common)
+══════════════════════════════════════════ */
+.sec-hdr{padding:clamp(60px,8vw,120px) var(--px) clamp(40px,5vw,72px);}
+.sec-eyebrow{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.4em;text-transform:uppercase;color:var(--red);margin-bottom:16px;display:flex;align-items:center;gap:12px;}
+.sec-eyebrow::before{content:'';width:32px;height:1px;background:var(--red);}
+.sec-title{font-family:'Playfair Display',serif;font-size:clamp(36px,5.5vw,72px);font-weight:700;line-height:1.05;letter-spacing:-.02em;}
+.sec-title em{font-style:italic;color:var(--red);}
+.sec-body{font-family:'Lora',serif;font-size:clamp(14px,1.5vw,17px);color:var(--bone);line-height:1.9;max-width:640px;margin-top:20px;}
+
+/* ══════════════════════════════════════════
+   THE NUMBERS SECTION
+══════════════════════════════════════════ */
+#numbers{background:var(--paper);color:var(--ink);}
+.numbers-grid{display:grid;grid-template-columns:repeat(4,1fr);padding:0 var(--px) clamp(48px,6vw,80px);}
+.num-cell{padding:clamp(24px,3vw,48px) clamp(16px,2vw,32px);border-right:1px solid var(--bone);}
+.num-cell:last-child{border-right:none;}
+.num-val{font-family:'Playfair Display',serif;font-size:clamp(40px,5.5vw,72px);font-weight:900;line-height:.9;color:var(--red);margin-bottom:8px;}
+.num-unit{font-family:'Playfair Display',serif;font-size:clamp(18px,2.5vw,32px);font-weight:400;font-style:italic;color:var(--orange);}
+.num-desc{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--warm-gray);margin-top:8px;line-height:1.8;}
+.num-bar{height:2px;background:var(--bone);margin-top:16px;overflow:hidden;}
+.num-fill{height:100%;background:linear-gradient(to right,var(--red),var(--orange));width:0;transition:width 1.8s cubic-bezier(.16,1,.3,1);}
+.num-sublabel{font-family:'Lora',serif;font-size:clamp(11px,1.2vw,13px);color:var(--warm-gray);margin-top:10px;font-style:italic;line-height:1.7;}
+
+/* ══════════════════════════════════════════
+   PULLQUOTE
+══════════════════════════════════════════ */
+.pullquote{padding:clamp(48px,6vw,96px) var(--px);background:var(--ink);border-top:1px solid #1e1f1a;border-bottom:1px solid #1e1f1a;position:relative;overflow:hidden;}
+.pullquote::before{content:'"';font-family:'Playfair Display',serif;font-size:280px;font-weight:900;color:rgba(192,57,43,.08);position:absolute;top:-60px;left:calc(var(--px) - 20px);line-height:1;pointer-events:none;}
+.pq-text{font-family:'Playfair Display',serif;font-size:clamp(22px,3.5vw,48px);font-weight:400;font-style:italic;line-height:1.4;max-width:900px;position:relative;z-index:1;}
+.pq-text em{color:var(--red);}
+.pq-attr{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.25em;color:var(--warm-gray);text-transform:uppercase;margin-top:24px;}
+
+/* ══════════════════════════════════════════
+   SPECIES ENCYCLOPEDIA
+══════════════════════════════════════════ */
+#species{background:var(--ink);}
+.species-filters{display:flex;gap:8px;flex-wrap:wrap;padding:0 var(--px) clamp(24px,3vw,40px);}
+.filter-btn{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.15em;text-transform:uppercase;border:1px solid #2a2b26;color:var(--warm-gray);padding:8px 16px;background:none;cursor:none;transition:all .3s;}
+.filter-btn:hover,.filter-btn.active{border-color:var(--red);color:var(--red);background:var(--red-dim);}
+.filter-btn.all.active{border-color:var(--paper);color:var(--paper);}
+.species-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(260px,30vw,340px),1fr));gap:2px;padding:0 var(--px) 2px;}
+.species-card{background:#0e0f0b;border:1px solid #1e1f1a;position:relative;overflow:hidden;cursor:none;transition:border-color .4s,transform .4s;}
+.species-card:hover{border-color:rgba(192,57,43,.5);transform:translateY(-3px);}
+.species-card.hidden{display:none;}
+.sc-image{height:clamp(140px,20vw,220px);position:relative;overflow:hidden;background:#111209;}
+.sc-image canvas{width:100%;height:100%;display:block;}
+.sc-status-pill{position:absolute;top:12px;left:12px;font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.2em;text-transform:uppercase;padding:4px 10px;border:1px solid;}
+.cr{color:#e74c3c;border-color:#e74c3c;background:rgba(231,76,60,.12);}
+.en{color:#e67e22;border-color:#e67e22;background:rgba(230,126,34,.1);}
+.vu{color:#f1c40f;border-color:#f1c40f;background:rgba(241,196,15,.08);}
+.nt{color:#27ae60;border-color:#27ae60;background:rgba(39,174,96,.08);}
+.sc-body{padding:clamp(16px,2vw,24px);}
+.sc-common{font-family:'Playfair Display',serif;font-size:clamp(18px,2vw,24px);font-weight:700;margin-bottom:4px;}
+.sc-sci{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.12em;color:var(--warm-gray);font-style:italic;margin-bottom:14px;}
+.sc-desc{font-family:'Lora',serif;font-size:clamp(11px,1.1vw,13px);color:var(--bone);line-height:1.85;margin-bottom:16px;}
+.sc-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.sc-stat{background:#141510;padding:10px 12px;}
+.sc-stat-num{font-family:'Playfair Display',serif;font-size:clamp(16px,2vw,22px);font-weight:700;color:var(--paper);line-height:1;}
+.sc-stat-lbl{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.15em;color:var(--warm-gray);text-transform:uppercase;margin-top:3px;}
+.sc-threats{margin-top:14px;display:flex;flex-wrap:wrap;gap:5px;}
+.threat-tag{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;background:#1e1f1a;color:var(--warm-gray);}
+.sc-trend{display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid #1e1f1a;}
+.trend-line-wrap{flex:1;height:28px;position:relative;}
+.sc-action{width:100%;margin-top:16px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.15em;text-transform:uppercase;border:1px solid #2a2b26;color:var(--warm-gray);padding:10px;background:none;cursor:none;transition:all .3s;text-align:center;}
+.sc-action:hover{border-color:var(--red);color:var(--red);background:var(--red-dim);}
+
+/* SPECIES MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(10,11,8,.95);z-index:800;opacity:0;pointer-events:none;transition:opacity .4s;overflow-y:auto;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{max-width:1000px;margin:60px auto;background:#0e0f0b;border:1px solid #2a2b26;position:relative;}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--bone);font-size:20px;cursor:none;z-index:10;font-family:'DM Mono',monospace;}
+.modal-hero{height:clamp(200px,30vw,380px);position:relative;overflow:hidden;}
+.modal-hero canvas{width:100%;height:100%;display:block;}
+.modal-hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,#0e0f0b 0%,transparent 60%);}
+.modal-content{padding:clamp(24px,4vw,56px);}
+.modal-status{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.3em;text-transform:uppercase;margin-bottom:12px;}
+.modal-name{font-family:'Playfair Display',serif;font-size:clamp(32px,5vw,60px);font-weight:900;line-height:1;}
+.modal-sci{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--warm-gray);font-style:italic;margin-top:6px;margin-bottom:24px;}
+.modal-grid{display:grid;grid-template-columns:2fr 1fr;gap:clamp(24px,4vw,48px);}
+.modal-body-text{font-family:'Lora',serif;font-size:clamp(13px,1.4vw,16px);color:var(--bone);line-height:2;}
+.modal-body-text p{margin-bottom:16px;}
+.modal-facts{background:#141510;padding:clamp(16px,2vw,28px);}
+.modal-fact-row{display:flex;justify-content:space-between;align-items:flex-start;padding:12px 0;border-bottom:1px solid #1e1f1a;}
+.modal-fact-row:last-child{border-bottom:none;}
+.modal-fact-key{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.15em;text-transform:uppercase;color:var(--warm-gray);}
+.modal-fact-val{font-family:'Lora',serif;font-size:clamp(11px,1.2vw,14px);color:var(--paper);text-align:right;max-width:55%;}
+.modal-chart-section{margin-top:32px;padding-top:24px;border-top:1px solid #1e1f1a;}
+.modal-chart-title{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.25em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:16px;}
+
+/* ══════════════════════════════════════════
+   BIOME SECTION
+══════════════════════════════════════════ */
+#biomes{background:var(--paper);color:var(--ink);}
+.biome-tabs{display:flex;gap:0;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--bone);padding:0 var(--px);}
+.biome-tabs::-webkit-scrollbar{display:none;}
+.biome-tab{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;padding:14px 20px;border:none;background:none;color:var(--warm-gray);cursor:none;white-space:nowrap;transition:color .3s;border-bottom:2px solid transparent;margin-bottom:-1px;}
+.biome-tab.active{color:var(--red);border-bottom-color:var(--red);}
+.biome-panels{padding:clamp(32px,4vw,56px) var(--px);}
+.biome-panel{display:none;}
+.biome-panel.active{display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,5vw,80px);align-items:start;}
+.biome-info h3{font-family:'Playfair Display',serif;font-size:clamp(28px,3.5vw,44px);font-weight:700;margin-bottom:16px;line-height:1.1;}
+.biome-info p{font-family:'Lora',serif;font-size:clamp(13px,1.3vw,15px);color:#4a4a3a;line-height:1.9;margin-bottom:16px;}
+.biome-stats-list{margin-top:24px;}
+.biome-stat-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--bone);}
+.biome-stat-key{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--warm-gray);}
+.biome-stat-val{font-family:'Playfair Display',serif;font-size:clamp(16px,2vw,22px);font-weight:700;color:var(--red);}
+.biome-visual canvas{width:100%;border:1px solid var(--bone);}
+.biome-species-list{margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.biome-sp-item{background:var(--paper2);padding:10px 14px;font-family:'Lora',serif;font-size:clamp(11px,1.2vw,13px);}
+.biome-sp-item strong{display:block;font-weight:500;}
+.biome-sp-item em{font-size:10px;color:var(--warm-gray);}
+
+/* ══════════════════════════════════════════
+   THREAT ANALYSIS
+══════════════════════════════════════════ */
+#threats{background:#0a0b08;}
+.threats-inner{padding:0 var(--px) clamp(60px,8vw,120px);}
+.threats-layout{display:grid;grid-template-columns:1fr 1fr;gap:2px;}
+.threat-block{background:#0e0f0b;border:1px solid #1e1f1a;padding:clamp(24px,3vw,40px);position:relative;overflow:hidden;transition:border-color .4s;}
+.threat-block:hover{border-color:rgba(192,57,43,.35);}
+.threat-block-num{font-family:'Playfair Display',serif;font-size:clamp(64px,8vw,100px);font-weight:900;color:rgba(192,57,43,.08);position:absolute;top:-10px;right:16px;line-height:1;pointer-events:none;}
+.threat-icon{font-size:32px;margin-bottom:16px;display:block;}
+.threat-name{font-family:'Playfair Display',serif;font-size:clamp(20px,2.5vw,28px);font-weight:700;margin-bottom:10px;}
+.threat-desc{font-family:'Lora',serif;font-size:clamp(12px,1.2vw,14px);color:var(--bone);line-height:1.9;margin-bottom:20px;}
+.threat-impact{display:flex;flex-direction:column;gap:8px;}
+.threat-row{display:flex;align-items:center;gap:12px;}
+.threat-row-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;color:var(--warm-gray);width:100px;flex-shrink:0;text-transform:uppercase;}
+.threat-bar{flex:1;height:4px;background:#1e1f1a;overflow:hidden;}
+.threat-fill{height:100%;width:0;transition:width 1.5s ease;}
+.threat-pct{font-family:'DM Mono',monospace;font-size:8px;color:var(--warm-gray);width:28px;text-align:right;}
+
+/* ══════════════════════════════════════════
+   INTERACTIVE MAP
+══════════════════════════════════════════ */
+#worldmap{background:var(--paper);color:var(--ink);}
+.map-wrap{padding:0 var(--px) clamp(48px,6vw,80px);}
+.map-container{border:1px solid var(--bone);background:var(--paper2);position:relative;overflow:hidden;}
+#world-canvas{width:100%;display:block;cursor:crosshair;}
+.map-tooltip{position:absolute;background:var(--ink);color:var(--paper);padding:10px 14px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;pointer-events:none;opacity:0;transition:opacity .2s;border:1px solid #2a2b26;max-width:200px;line-height:1.8;z-index:10;}
+.map-legend{display:flex;gap:20px;flex-wrap:wrap;padding:16px clamp(16px,2vw,24px);border-top:1px solid var(--bone);background:var(--paper2);}
+.map-legend-item{display:flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.15em;text-transform:uppercase;color:var(--warm-gray);}
+.map-legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.map-region-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:2px;margin-top:2px;}
+.map-region-card{background:var(--paper2);padding:clamp(14px,2vw,20px);border:1px solid var(--bone);transition:border-color .3s;}
+.map-region-card:hover{border-color:var(--red);}
+.mrg-name{font-family:'Playfair Display',serif;font-size:clamp(14px,1.5vw,18px);font-weight:700;margin-bottom:4px;}
+.mrg-count{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.15em;color:var(--red);text-transform:uppercase;}
+.mrg-bar{height:2px;background:var(--bone);margin-top:10px;overflow:hidden;}
+.mrg-fill{height:100%;background:var(--red);width:0;transition:width 1.5s ease;}
+
+/* ══════════════════════════════════════════
+   CONSERVATION TIMELINE
+══════════════════════════════════════════ */
+#timeline{background:var(--ink);}
+.timeline-inner{padding:0 var(--px) clamp(60px,8vw,120px);}
+.tl-scroll{position:relative;padding-left:clamp(20px,3vw,40px);}
+.tl-line{position:absolute;left:0;top:0;bottom:0;width:1px;background:linear-gradient(to bottom,var(--red),transparent);}
+.tl-item{position:relative;margin-bottom:clamp(32px,4vw,56px);opacity:0;transform:translateY(20px);transition:opacity .7s,transform .7s;}
+.tl-item.vis{opacity:1;transform:translateY(0);}
+.tl-dot{position:absolute;left:calc(-1 * clamp(20px,3vw,40px) - 5px);top:6px;width:11px;height:11px;border-radius:50%;background:var(--red);box-shadow:0 0 12px rgba(192,57,43,.6);}
+.tl-year{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.3em;color:var(--red);margin-bottom:6px;text-transform:uppercase;}
+.tl-title{font-family:'Playfair Display',serif;font-size:clamp(18px,2.2vw,26px);font-weight:700;margin-bottom:8px;line-height:1.2;}
+.tl-body{font-family:'Lora',serif;font-size:clamp(12px,1.2vw,14px);color:var(--bone);line-height:1.9;max-width:680px;}
+.tl-badge{display:inline-block;font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.15em;text-transform:uppercase;padding:3px 10px;margin-top:10px;border:1px solid;}
+.badge-win{color:#27ae60;border-color:#27ae60;background:rgba(39,174,96,.08);}
+.badge-loss{color:var(--red);border-color:var(--red);background:var(--red-dim);}
+.badge-milestone{color:var(--amber);border-color:var(--amber);background:rgba(230,126,34,.08);}
+
+/* ══════════════════════════════════════════
+   EXTINCTION COUNTER
+══════════════════════════════════════════ */
+#extinction-counter{background:var(--red);padding:clamp(48px,6vw,96px) var(--px);text-align:center;}
+.ec-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.4em;text-transform:uppercase;color:rgba(245,240,232,.7);margin-bottom:16px;}
+.ec-num{font-family:'Playfair Display',serif;font-size:clamp(56px,10vw,140px);font-weight:900;color:var(--paper);line-height:1;letter-spacing:-.03em;}
+.ec-sub{font-family:'Lora',serif;font-size:clamp(14px,1.5vw,18px);font-style:italic;color:rgba(245,240,232,.8);margin-top:12px;}
+.ec-context{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.2em;color:rgba(245,240,232,.5);text-transform:uppercase;margin-top:20px;}
+.ec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-top:clamp(24px,3vw,48px);}
+.ec-cell{background:rgba(10,11,8,.2);padding:clamp(16px,2vw,24px);}
+.ec-cell-num{font-family:'Playfair Display',serif;font-size:clamp(28px,4vw,48px);font-weight:700;color:var(--paper);}
+.ec-cell-lbl{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.2em;color:rgba(245,240,232,.6);text-transform:uppercase;margin-top:6px;}
+
+/* ══════════════════════════════════════════
+   SUCCESS STORIES
+══════════════════════════════════════════ */
+#success{background:var(--paper);color:var(--ink);}
+.success-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:0 var(--px) clamp(60px,6vw,100px);}
+.success-card{border:1px solid var(--bone);padding:clamp(20px,2.5vw,36px);background:var(--cream);transition:border-color .3s,transform .3s;}
+.success-card:hover{border-color:var(--forest);transform:translateY(-3px);}
+.sc-icon{font-size:36px;margin-bottom:16px;}
+.sc-name{font-family:'Playfair Display',serif;font-size:clamp(18px,2vw,22px);font-weight:700;margin-bottom:6px;}
+.sc-before-after{display:flex;align-items:center;gap:12px;margin:16px 0;}
+.sc-before{font-family:'Playfair Display',serif;font-size:clamp(18px,2.5vw,28px);font-weight:700;color:var(--red);}
+.sc-arrow{font-family:'DM Mono',monospace;font-size:12px;color:var(--warm-gray);}
+.sc-after{font-family:'Playfair Display',serif;font-size:clamp(18px,2.5vw,28px);font-weight:700;color:var(--forest);}
+.sc-story{font-family:'Lora',serif;font-size:clamp(11px,1.2vw,13px);color:#4a4a3a;line-height:1.9;}
+.sc-year{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--forest);margin-top:12px;}
+
+/* ══════════════════════════════════════════
+   DATA DEEP DIVE
+══════════════════════════════════════════ */
+#data{background:#0a0b08;}
+.data-panels{display:grid;grid-template-columns:1fr 1fr;gap:2px;padding:0 var(--px) clamp(48px,6vw,80px);}
+.data-panel{background:#0e0f0b;border:1px solid #1e1f1a;padding:clamp(20px,2.5vw,36px);}
+.dp-title{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.3em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:20px;display:flex;align-items:center;gap:10px;}
+.dp-title .dot{width:6px;height:6px;background:var(--red);border-radius:50%;animation:blink 1.5s infinite;}
+#breakdown-canvas,#trend-canvas,#radar-canvas,#loss-canvas{width:100%;display:block;}
+
+/* ══════════════════════════════════════════
+   WHAT YOU CAN DO
+══════════════════════════════════════════ */
+#action{background:var(--forest);padding:clamp(60px,8vw,120px) var(--px);}
+.action-header{margin-bottom:clamp(40px,5vw,72px);}
+.action-header .sec-eyebrow{color:rgba(245,240,232,.6);}
+.action-header .sec-eyebrow::before{background:rgba(245,240,232,.3);}
+.action-header .sec-title{color:var(--paper);}
+.action-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(16px,2vw,24px);}
+.action-card{border:1px solid rgba(245,240,232,.15);padding:clamp(20px,2.5vw,36px);transition:border-color .3s,background .3s;}
+.action-card:hover{border-color:rgba(245,240,232,.5);background:rgba(245,240,232,.05);}
+.action-icon{font-size:28px;margin-bottom:16px;}
+.action-title{font-family:'Playfair Display',serif;font-size:clamp(18px,2vw,22px);font-weight:700;color:var(--paper);margin-bottom:10px;}
+.action-text{font-family:'Lora',serif;font-size:clamp(12px,1.2vw,13px);color:rgba(245,240,232,.7);line-height:1.9;}
+.action-link{display:inline-block;margin-top:16px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.15em;text-transform:uppercase;color:rgba(245,240,232,.8);text-decoration:none;border-bottom:1px solid rgba(245,240,232,.3);padding-bottom:2px;transition:color .3s,border-color .3s;}
+.action-link:hover{color:var(--paper);border-color:var(--paper);}
+
+/* ══════════════════════════════════════════
+   NEWSLETTER / PLEDGE
+══════════════════════════════════════════ */
+#pledge{background:var(--paper);padding:clamp(60px,8vw,120px) var(--px);text-align:center;}
+.pledge-title{font-family:'Playfair Display',serif;font-size:clamp(32px,5vw,64px);font-weight:900;font-style:italic;margin-bottom:16px;}
+.pledge-sub{font-family:'Lora',serif;font-size:clamp(14px,1.5vw,17px);color:var(--warm-gray);max-width:520px;margin:0 auto 40px;line-height:1.8;}
+.pledge-form{display:flex;gap:8px;max-width:480px;margin:0 auto;flex-wrap:wrap;justify-content:center;}
+.pledge-input{flex:1;min-width:220px;border:1px solid var(--bone);background:var(--cream);padding:14px 18px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;color:var(--ink);outline:none;}
+.pledge-input:focus{border-color:var(--red);}
+.pledge-btn{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;border:1px solid var(--red);background:var(--red);color:var(--paper);padding:14px 24px;cursor:none;transition:all .3s;}
+.pledge-btn:hover{background:transparent;color:var(--red);}
+.pledge-count{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--warm-gray);margin-top:20px;}
+.pledge-count b{color:var(--forest);}
+
+/* ══════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════ */
+#footer{background:var(--ink);padding:clamp(48px,6vw,80px) var(--px);border-top:1px solid #1e1f1a;}
+.footer-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:clamp(24px,4vw,48px);margin-bottom:clamp(40px,5vw,64px);}
+.footer-brand{font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:var(--paper);font-style:italic;margin-bottom:12px;}
+.footer-brand em{color:var(--red);font-style:normal;}
+.footer-brand-sub{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.15em;color:var(--warm-gray);text-transform:uppercase;line-height:1.8;}
+.footer-col-title{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.25em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:16px;}
+.footer-links{list-style:none;}
+.footer-links li{margin-bottom:10px;}
+.footer-links a{font-family:'Lora',serif;font-size:clamp(11px,1.1vw,13px);color:var(--bone);text-decoration:none;transition:color .3s;}
+.footer-links a:hover{color:var(--red);}
+.footer-bottom{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;padding-top:clamp(20px,3vw,32px);border-top:1px solid #1e1f1a;}
+.footer-copy{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.15em;color:var(--warm-gray);text-transform:uppercase;}
+.footer-animals{display:flex;gap:12px;font-size:18px;opacity:.25;}
+
+/* ══════════════════════════════════════════
+   ANIMATIONS & UTILITIES
+══════════════════════════════════════════ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+@keyframes scrollPulse{0%,100%{opacity:1;}50%{opacity:.1;}}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
+@keyframes countUp{from{opacity:0;}to{opacity:1;}}
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .8s ease,transform .8s ease;}
+.reveal.vis{opacity:1;transform:translateY(0);}
+.reveal-left{opacity:0;transform:translateX(-28px);transition:opacity .8s ease,transform .8s ease;}
+.reveal-left.vis{opacity:1;transform:translateX(0);}
+.reveal-right{opacity:0;transform:translateX(28px);transition:opacity .8s ease,transform .8s ease;}
+.reveal-right.vis{opacity:1;transform:translateX(0);}
+
+/* ══════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════ */
+@media(max-width:1100px){
+  .footer-top{grid-template-columns:1fr 1fr;}
+  .modal-grid{grid-template-columns:1fr;}
+}
+@media(max-width:900px){
+  .hamburger{display:flex;}
+  .nav-links,.nav-tag{display:none;}
+  .numbers-grid{grid-template-columns:repeat(2,1fr);}
+  .num-cell{border-right:none;border-bottom:1px solid var(--bone);}
+  .species-grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr));}
+  .biome-panel.active{grid-template-columns:1fr;}
+  .threats-layout{grid-template-columns:1fr;}
+  .success-grid{grid-template-columns:1fr 1fr;}
+  .action-grid{grid-template-columns:1fr 1fr;}
+  .data-panels{grid-template-columns:1fr;}
+  .ec-grid{grid-template-columns:1fr 1fr;}
+}
+@media(max-width:600px){
+  .numbers-grid{grid-template-columns:1fr 1fr;}
+  .success-grid{grid-template-columns:1fr;}
+  .action-grid{grid-template-columns:1fr;}
+  .ec-grid{grid-template-columns:1fr;}
+  .footer-top{grid-template-columns:1fr;}
+  .hero-counter{display:none;}
+  .modal{margin:0;}
+}
+</style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- MOBILE NAV -->
+<div class="mob-nav" id="mobNav">
+  <button class="mob-close" onclick="closeMob()">✕</button>
+  <a href="#species" onclick="closeMob()">Species</a>
+  <a href="#biomes" onclick="closeMob()">Biomes</a>
+  <a href="#threats" onclick="closeMob()">Threats</a>
+  <a href="#worldmap" onclick="closeMob()">Map</a>
+  <a href="#timeline" onclick="closeMob()">History</a>
+  <a href="#action" onclick="closeMob()">Act</a>
+</div>
+
+<!-- NAV -->
+<nav id="nav">
+  <a href="#" class="nav-brand"><em>VANISHING</em></a>
+  <ul class="nav-links">
+    <li><a href="#species">Species</a></li>
+    <li><a href="#biomes">Biomes</a></li>
+    <li><a href="#threats">Threats</a></li>
+    <li><a href="#worldmap">World Map</a></li>
+    <li><a href="#timeline">History</a></li>
+    <li><a href="#action">Act Now</a></li>
+  </ul>
+  <a href="#pledge" class="nav-tag">Take the Pledge</a>
+  <button class="hamburger" onclick="openMob()"><span></span><span></span><span></span></button>
+</nav>
+
+<!-- ═══ HERO ═══ -->
+<section id="hero" class="section">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-overlay"></div>
+  <div class="hero-counter reveal">
+    <div class="hero-counter-num" id="heroNum">1,000,000</div>
+    <div class="hero-counter-lbl">species threatened<br>with extinction</div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-label">A Global Crisis — The Sixth Mass Extinction</div>
+    <h1 class="hero-title">
+      <span>VAN-</span>
+      <span class="ital">ISHING</span>
+    </h1>
+    <p class="hero-subtitle">Every day, dozens of species fall silent forever. This is the story of those still fighting to survive — and the data, the science, and the human will trying to save them.</p>
+  </div>
+  <div class="hero-scroll">
+    <div class="hero-scroll-txt">Scroll</div>
+    <div class="hero-scroll-line"></div>
+  </div>
+</section>
+
+<!-- ═══ CRISIS BAR ═══ -->
+<div class="crisis-bar section">
+  <div class="crisis-stat"><div class="crisis-num">1,000,000+</div><div class="crisis-lbl">Species threatened<br>with extinction</div></div>
+  <div class="crisis-div"></div>
+  <div class="crisis-stat"><div class="crisis-num">68%</div><div class="crisis-lbl">Wildlife population<br>decline since 1970</div></div>
+  <div class="crisis-div"></div>
+  <div class="crisis-stat"><div class="crisis-num">1,000×</div><div class="crisis-lbl">Current extinction rate<br>vs. natural background</div></div>
+  <div class="crisis-div"></div>
+  <div class="crisis-stat"><div class="crisis-num">41%</div><div class="crisis-lbl">Amphibian species<br>threatened</div></div>
+  <div class="crisis-div"></div>
+  <div class="crisis-stat"><div class="crisis-num">36%</div><div class="crisis-lbl">Shark &amp; ray species<br>threatened</div></div>
+  <div class="crisis-div"></div>
+  <div class="crisis-stat"><div class="crisis-num">34%</div><div class="crisis-lbl">Conifer species<br>threatened</div></div>
+</div>
+
+<!-- ═══ THE NUMBERS ═══ -->
+<section id="numbers" class="section">
+  <div class="sec-hdr">
+    <div class="sec-eyebrow">The Crisis by Numbers</div>
+    <h2 class="sec-title">A Planet <em>Unraveling</em></h2>
+    <p class="sec-body">The IUCN Red List has assessed over 150,000 species. What it reveals is a planet in biological freefall — one driven almost entirely by a single force: human activity.</p>
+  </div>
+  <div class="numbers-grid reveal" id="numGrid">
+    <div class="num-cell">
+      <div class="num-val"><span class="count" data-target="42119">0</span></div>
+      <div class="num-unit">Species</div>
+      <div class="num-desc">Threatened with extinction on the IUCN Red List 2023</div>
+      <div class="num-bar"><div class="num-fill" data-w="72"></div></div>
+      <div class="num-sublabel">Of 150,388 assessed species, 28% face extinction</div>
+    </div>
+    <div class="num-cell">
+      <div class="num-val"><span class="count" data-target="902">0</span></div>
+      <div class="num-unit">Extinct</div>
+      <div class="num-desc">Species confirmed extinct since 1500 AD</div>
+      <div class="num-bar"><div class="num-fill" data-w="45"></div></div>
+      <div class="num-sublabel">The true number is estimated to be 5–10× higher</div>
+    </div>
+    <div class="num-cell">
+      <div class="num-val"><span class="count" data-target="8">0</span></div>
+      <div class="num-unit">Per Year</div>
+      <div class="num-desc">Vertebrate species go extinct annually — 100× natural rate</div>
+      <div class="num-bar"><div class="num-fill" data-w="90"></div></div>
+      <div class="num-sublabel">Pre-human background rate: 0.1–1 per million species per year</div>
+    </div>
+    <div class="num-cell">
+      <div class="num-val">$<span class="count" data-target="10">0</span></div>
+      <div class="num-unit">Trillion/yr</div>
+      <div class="num-desc">Economic value of nature's services to humanity annually</div>
+      <div class="num-bar"><div class="num-fill" data-w="60"></div></div>
+      <div class="num-sublabel">Biodiversity loss costs the global economy $5 trillion annually</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PULLQUOTE ═══ -->
+<div class="pullquote section reveal">
+  <p class="pq-text">"We are the first generation to feel the effect of climate change and the last generation that can do something about it. The <em>same is true of extinction</em> — we are the last generation that can act before these animals are gone forever."</p>
+  <div class="pq-attr">— Dr. Jane Goodall, Primatologist &amp; Conservation Icon</div>
+</div>
+
+<!-- ═══ SPECIES ENCYCLOPEDIA ═══ -->
+<section id="species" class="section">
+  <div class="sec-hdr reveal">
+    <div class="sec-eyebrow">Species Encyclopedia</div>
+    <h2 class="sec-title">The <em>Threatened</em></h2>
+    <p class="sec-body" style="color:var(--bone);">Detailed profiles of critically endangered, endangered, and vulnerable species. Click any card to open a full species report.</p>
+  </div>
+  <div class="species-filters reveal">
+    <button class="filter-btn all active" onclick="filterSpecies('all',this)">All Species</button>
+    <button class="filter-btn" onclick="filterSpecies('CR',this)">Critically Endangered</button>
+    <button class="filter-btn" onclick="filterSpecies('EN',this)">Endangered</button>
+    <button class="filter-btn" onclick="filterSpecies('VU',this)">Vulnerable</button>
+    <button class="filter-btn" onclick="filterSpecies('mammal',this)">Mammals</button>
+    <button class="filter-btn" onclick="filterSpecies('bird',this)">Birds</button>
+    <button class="filter-btn" onclick="filterSpecies('marine',this)">Marine</button>
+    <button class="filter-btn" onclick="filterSpecies('reptile',this)">Reptiles</button>
+  </div>
+  <div class="species-grid" id="speciesGrid">
+    <!-- filled by JS -->
+  </div>
+</section>
+
+<!-- SPECIES MODAL -->
+<div class="modal-overlay" id="speciesModal">
+  <div class="modal" id="modalContent">
+    <button class="modal-close" onclick="closeModal()">✕ Close</button>
+    <div class="modal-hero">
+      <canvas id="modal-canvas"></canvas>
+      <div class="modal-hero-overlay"></div>
+    </div>
+    <div class="modal-content" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- ═══ BIOMES ═══ -->
+<section id="biomes" class="section">
+  <div class="sec-hdr reveal">
+    <div class="sec-eyebrow" style="color:var(--red);">Earth's Ecosystems</div>
+    <h2 class="sec-title" style="color:var(--ink);">The World's <em>Biomes</em></h2>
+    <p class="sec-body">Each biome hosts unique webs of life — and each is under unprecedented pressure. Explore the ecosystems most at risk and the species that depend on them.</p>
+  </div>
+  <div class="biome-tabs">
+    <button class="biome-tab active" onclick="switchBiome('rainforest',this)">🌿 Tropical Rainforest</button>
+    <button class="biome-tab" onclick="switchBiome('ocean',this)">🌊 Deep Ocean</button>
+    <button class="biome-tab" onclick="switchBiome('savanna',this)">🌾 African Savanna</button>
+    <button class="biome-tab" onclick="switchBiome('arctic',this)">❄️ Arctic Tundra</button>
+    <button class="biome-tab" onclick="switchBiome('coral',this)">🪸 Coral Reefs</button>
+    <button class="biome-tab" onclick="switchBiome('mangrove',this)">🌱 Mangroves</button>
+  </div>
+  <div class="biome-panels" id="biomePanels">
+    <!-- filled by JS -->
+  </div>
+</section>
+
+<!-- ═══ THREAT ANALYSIS ═══ -->
+<section id="threats" class="section">
+  <div class="sec-hdr reveal">
+    <div class="sec-eyebrow">Threat Analysis</div>
+    <h2 class="sec-title">Forces of <em>Destruction</em></h2>
+    <p class="sec-body" style="color:var(--bone);">The drivers of extinction are not mysteries. They are human choices — and they are reversible. Understanding them is the first step to stopping them.</p>
+  </div>
+  <div class="threats-inner">
+    <div class="threats-layout reveal" id="threatsLayout">
+      <!-- filled by JS -->
+    </div>
+  </div>
+</section>
+
+<!-- ═══ WORLD MAP ═══ -->
+<section id="worldmap" class="section">
+  <div class="sec-hdr reveal">
+    <div class="sec-eyebrow" style="color:var(--red);">Global Distribution</div>
+    <h2 class="sec-title" style="color:var(--ink);">Hotspots of <em>Crisis</em></h2>
+    <p class="sec-body">Biodiversity hotspots — regions with exceptional concentrations of endemic species under exceptional threat. These 36 areas cover just 2.5% of Earth's land surface but hold more than half of all plant species and 43% of vertebrates as endemics.</p>
+  </div>
+  <div class="map-wrap">
+    <div class="map-container reveal">
+      <canvas id="world-canvas" height="480"></canvas>
+      <div class="map-tooltip" id="mapTooltip"></div>
+      <div class="map-legend">
+        <div class="map-legend-item"><div class="map-legend-dot" style="background:#c0392b;"></div>Critically Endangered Hotspot</div>
+        <div class="map-legend-item"><div class="map-legend-dot" style="background:#e67e22;"></div>High Threat Region</div>
+        <div class="map-legend-item"><div class="map-legend-dot" style="background:#27ae60;"></div>Protected Area</div>
+        <div class="map-legend-item"><div class="map-legend-dot" style="background:#2980b9;"></div>Marine Protected Area</div>
+        <div class="map-legend-item"><div class="map-legend-dot" style="background:#f1c40f;"></div>Biodiversity Hotspot</div>
+      </div>
+    </div>
+    <div class="map-region-list reveal" id="regionList"></div>
+  </div>
+</section>
+
+<!-- ═══ TIMELINE ═══ -->
+<section id="timeline" class="section">
+  <div class="sec-hdr reveal">
+    <div class="sec-eyebrow">Conservation History</div>
+    <h2 class="sec-title">A Century of <em>Struggle</em></h2>
+    <p class="sec-body" style="color:var(--bone);">The history of conservation is one of hard-won victories against overwhelming odds. Every success proves what is possible. Every loss reminds us what is at stake.</p>
+  </div>
+  <div class="timeline-inner">
+    <div class="tl-scroll">
+      <div class="tl-line"></div>
+      <div id="tlItems"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ EXTINCTION COUNTER ═══ -->
+<section id="extinction-counter" class="section">
+  <div class="ec-label">Since you opened this page, an estimated</div>
+  <div class="ec-num" id="extCounter">0</div>
+  <div class="ec-sub">species have gone locally extinct or had their populations significantly diminished</div>
+  <div class="ec-context">Based on IPBES estimate of ~150 species lost per day</div>
+  <div class="ec-grid reveal">
+    <div class="ec-cell">
+      <div class="ec-cell-num"><span class="count-up" data-target="902">0</span></div>
+      <div class="ec-cell-lbl">Confirmed extinctions since 1500</div>
+    </div>
+    <div class="ec-cell">
+      <div class="ec-cell-num"><span class="count-up" data-target="150">0</span>/day</div>
+      <div class="ec-cell-lbl">Species lost per day (est.)</div>
+    </div>
+    <div class="ec-cell">
+      <div class="ec-cell-num"><span class="count-up" data-target="27000">0</span>/yr</div>
+      <div class="ec-cell-lbl">Estimated annual species loss</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ DATA DEEP DIVE ═══ -->
+<section id="data" class="section">
+  <div class="sec-hdr reveal">
+    <div class="sec-eyebrow">Data Analysis</div>
+    <h2 class="sec-title">The <em>Numbers</em> in Detail</h2>
+    <p class="sec-body" style="color:var(--bone);">Interactive visualizations drawn from IUCN Red List data, Living Planet Index, and peer-reviewed conservation science.</p>
+  </div>
+  <div class="data-panels reveal">
+    <div class="data-panel">
+      <div class="dp-title"><span class="dot"></span>IUCN Breakdown by Taxonomic Group</div>
+      <canvas id="breakdown-canvas" height="220"></canvas>
+    </div>
+    <div class="data-panel">
+      <div class="dp-title"><span class="dot"></span>Living Planet Index 1970–2024</div>
+      <canvas id="trend-canvas" height="220"></canvas>
+    </div>
+    <div class="data-panel">
+      <div class="dp-title"><span class="dot"></span>Primary Threat Contributions</div>
+      <canvas id="radar-canvas" height="220"></canvas>
+    </div>
+    <div class="data-panel">
+      <div class="dp-title"><span class="dot"></span>Habitat Loss by Biome (% remaining)</div>
+      <canvas id="loss-canvas" height="220"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SUCCESS STORIES ═══ -->
+<section id="success" class="section">
+  <div class="sec-hdr reveal">
+    <div class="sec-eyebrow" style="color:var(--red);">Hope &amp; Recovery</div>
+    <h2 class="sec-title" style="color:var(--ink);">Stories of <em>Comeback</em></h2>
+    <p class="sec-body">Conservation works. These species pulled back from the brink prove that with sufficient will, funding, and science, extinction is not inevitable.</p>
+  </div>
+  <div class="success-grid reveal" id="successGrid"></div>
+</section>
+
+<!-- ═══ ACTION ═══ -->
+<section id="action" class="section">
+  <div class="action-header reveal">
+    <div class="sec-eyebrow">What You Can Do</div>
+    <h2 class="sec-title">Your Role in the <em>Solution</em></h2>
+    <p class="sec-body" style="color:rgba(245,240,232,.75);">Individual action compounds. Collective will changes policy. Here is how you can become part of the conservation story.</p>
+  </div>
+  <div class="action-grid reveal" id="actionGrid"></div>
+</section>
+
+<!-- ═══ PLEDGE ═══ -->
+<section id="pledge" class="section">
+  <div class="pledge-title">Take the <em>Pledge</em></div>
+  <p class="pledge-sub">Join 2.4 million people who have pledged to speak, vote, and live in ways that protect biodiversity. Receive monthly species updates and conservation briefings.</p>
+  <div class="pledge-form">
+    <input class="pledge-input" type="email" placeholder="your@email.com" id="pledgeEmail">
+    <button class="pledge-btn" onclick="submitPledge()">I Pledge to Act</button>
+  </div>
+  <div class="pledge-count">Already joined: <b id="pledgeCount">2,417,384</b> people worldwide</div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer id="footer" class="section">
+  <div class="footer-top">
+    <div>
+      <div class="footer-brand"><em>VANISHING</em></div>
+      <div class="footer-brand-sub">A global endangered species atlas<br>Powered by IUCN Red List data<br>&amp; peer-reviewed conservation science</div>
+      <div style="margin-top:20px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.12em;color:#4a4a3a;line-height:2;">Data sources: IUCN Red List 2023, IPBES<br>Global Assessment, WWF Living Planet<br>Index, NASA Earth Observatory</div>
+    </div>
+    <div>
+      <div class="footer-col-title">Species</div>
+      <ul class="footer-links">
+        <li><a href="#species">All Species</a></li>
+        <li><a href="#">Critically Endangered</a></li>
+        <li><a href="#">Recently Extinct</a></li>
+        <li><a href="#">Recovery Stories</a></li>
+        <li><a href="#">Species of the Day</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Science</div>
+      <ul class="footer-links">
+        <li><a href="#threats">Threat Analysis</a></li>
+        <li><a href="#data">Data Visualizations</a></li>
+        <li><a href="#biomes">Biome Guide</a></li>
+        <li><a href="#worldmap">World Map</a></li>
+        <li><a href="#timeline">Conservation History</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Act</div>
+      <ul class="footer-links">
+        <li><a href="#action">Take Action</a></li>
+        <li><a href="#pledge">Pledge</a></li>
+        <li><a href="#">Donate</a></li>
+        <li><a href="#">Volunteer</a></li>
+        <li><a href="#">Spread Awareness</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2025 VANISHING — Educational Use · Data: IUCN Red List</div>
+    <div class="footer-animals">🦁 🐘 🦅 🐋 🦋 🐆 🐊 🦒 🐼 🦓</div>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════ -->
+<script>
+/* ── CURSOR ── */
+const cur=document.getElementById('cursor'),curR=document.getElementById('cursor-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+(function cursorLoop(){cur.style.left=mx+'px';cur.style.top=my+'px';rx+=(mx-rx)*.1;ry+=(my-ry)*.1;curR.style.left=rx+'px';curR.style.top=ry+'px';requestAnimationFrame(cursorLoop);})();
+
+/* ── NAV ── */
+window.addEventListener('scroll',()=>document.getElementById('nav').classList.toggle('solid',scrollY>80));
+function openMob(){document.getElementById('mobNav').classList.add('open');}
+function closeMob(){document.getElementById('mobNav').classList.remove('open');}
+
+/* ══════════════════════════════════════════
+   HERO CANVAS — Abstract wildlife ecosystem
+══════════════════════════════════════════ */
+(function(){
+  const canvas=document.getElementById('hero-canvas');
+  const ctx=canvas.getContext('2d');
+  function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
+  resize();window.addEventListener('resize',resize);
+
+  // Nodes = "ecosystem web"
+  const nodes=[];
+  const SPECIES_COLORS=['#c0392b','#e67e22','#27ae60','#2980b9','#8e44ad','#f39c12'];
+  for(let i=0;i<80;i++){
+    nodes.push({
+      x:Math.random()*canvas.width,y:Math.random()*canvas.height,
+      vx:(Math.random()-.5)*.5,vy:(Math.random()-.5)*.5,
+      size:1+Math.random()*3,col:SPECIES_COLORS[Math.floor(Math.random()*SPECIES_COLORS.length)],
+      opacity:.2+Math.random()*.5
+    });
+  }
+
+  // Silhouette animals (SVG-like path data as procedural curves)
+  function drawBird(c,x,y,s,alpha){
+    c.save();c.translate(x,y);c.scale(s,s);c.globalAlpha=alpha;
+    c.strokeStyle='rgba(245,240,232,0.3)';c.lineWidth=1;
+    c.beginPath();c.moveTo(0,0);c.quadraticCurveTo(-16,-8,-28,-3);
+    c.moveTo(0,0);c.quadraticCurveTo(16,-8,28,-3);
+    c.stroke();c.restore();
+  }
+  function drawTree(c,x,y,h,alpha){
+    c.save();c.globalAlpha=alpha*0.4;
+    c.strokeStyle='rgba(42,75,34,1)';c.lineWidth=1;
+    c.beginPath();c.moveTo(x,y);c.lineTo(x,y-h);c.stroke();
+    // branches
+    for(let i=0;i<3;i++){
+      const by=y-h*(0.4+i*0.2);
+      const bw=h*(0.25-i*0.06);
+      c.beginPath();c.moveTo(x,by);c.lineTo(x-bw,by-bw*.6);c.stroke();
+      c.beginPath();c.moveTo(x,by);c.lineTo(x+bw,by-bw*.6);c.stroke();
+    }
+    c.restore();
+  }
+
+  // Background forest silhouette
+  const trees=[];
+  for(let i=0;i<40;i++) trees.push({x:Math.random()*2000,h:60+Math.random()*120,alpha:.4+Math.random()*.3});
+
+  let t=0;
+  const birds=[];
+  for(let i=0;i<12;i++) birds.push({x:Math.random()*2000,y:100+Math.random()*400,s:.5+Math.random()*.8,vx:.3+Math.random()*.5,alpha:.1+Math.random()*.25});
+
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    // Deep gradient sky
+    const sky=ctx.createLinearGradient(0,0,0,canvas.height);
+    sky.addColorStop(0,'#040602');sky.addColorStop(.5,'#0a0f06');sky.addColorStop(1,'#121a0a');
+    ctx.fillStyle=sky;ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // Trees
+    trees.forEach(tr=>drawTree(ctx,tr.x%canvas.width,canvas.height,tr.h,tr.alpha));
+
+    // Node web
+    for(let i=0;i<nodes.length;i++){
+      for(let j=i+1;j<nodes.length;j++){
+        const d=Math.hypot(nodes[i].x-nodes[j].x,nodes[i].y-nodes[j].y);
+        if(d<120){
+          ctx.beginPath();
+          ctx.strokeStyle=`rgba(192,57,43,${(1-d/120)*.06})`;
+          ctx.lineWidth=.5;ctx.moveTo(nodes[i].x,nodes[i].y);ctx.lineTo(nodes[j].x,nodes[j].y);ctx.stroke();
+        }
+      }
+      const n=nodes[i];n.x+=n.vx;n.y+=n.vy;
+      if(n.x<0||n.x>canvas.width)n.vx*=-1;
+      if(n.y<0||n.y>canvas.height)n.vy*=-1;
+      ctx.beginPath();ctx.arc(n.x,n.y,n.size,0,Math.PI*2);
+      ctx.fillStyle=n.col;ctx.globalAlpha=n.opacity*.5;ctx.fill();ctx.globalAlpha=1;
+    }
+
+    // Birds
+    birds.forEach(b=>{
+      drawBird(ctx,b.x%(canvas.width+60),b.y,b.s,b.alpha);
+      b.x+=b.vx;
+    });
+
+    // Horizon glow
+    const glow=ctx.createRadialGradient(canvas.width/2,canvas.height,0,canvas.width/2,canvas.height,canvas.height*.6);
+    glow.addColorStop(0,'rgba(192,57,43,.06)');glow.addColorStop(1,'transparent');
+    ctx.fillStyle=glow;ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    t+=.01;
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ══════════════════════════════════════════
+   SPECIES DATA
+══════════════════════════════════════════ */
+const SPECIES_DATA=[
+  {
+    id:'amur-leopard',cat:'CR',group:'mammal',
+    common:'Amur Leopard',sci:'Panthera pardus orientalis',
+    emoji:'🐆',biomeColor:'#1a3322',accentColor:'#e67e22',
+    pop:'84–100',trend:'declining',habitat:'Temperate Forest, Russian Far East',
+    range:'Russia, China',threats:['habitat loss','poaching','prey depletion'],
+    desc:'The world\'s rarest wild cat, the Amur leopard has adapted to the cold climate of the Russian Far East with a thick, pale coat and widely spaced rosettes. Each individual can be identified by their unique spot pattern.',
+    detail:'Once ranging across northern China, the Korean Peninsula, and the Russian Far East, the Amur leopard has been driven to a single population. Remarkable conservation efforts have seen numbers slowly recover from a nadir of just 25–35 individuals in 2007. Today around 100 wild individuals persist, supported by prey recovery programs and anti-poaching units.',
+    size:'60–75 kg',lifespan:'10–15 years (wild)',diet:'Roe deer, sika deer, wild boar',offspringPerYear:'2–3 cubs every 2 years',
+    trendData:[25,28,32,35,42,55,67,80,84],trendYears:[2007,2009,2011,2013,2015,2017,2019,2021,2023]
+  },
+  {
+    id:'sumatran-tiger',cat:'CR',group:'mammal',
+    common:'Sumatran Tiger',sci:'Panthera tigris sumatrae',
+    emoji:'🐯',biomeColor:'#2d1a0a',accentColor:'#e74c3c',
+    pop:'400–600',trend:'declining',habitat:'Tropical Forest, Sumatra (Indonesia)',
+    range:'Sumatra only',threats:['deforestation','poaching','human-wildlife conflict'],
+    desc:'The smallest surviving tiger subspecies, the Sumatran tiger is the last Indonesian tiger — its two island cousins, the Bali and Javan tigers, are already extinct. Its stripes are closer together than other subspecies, giving it a darker, denser pattern.',
+    detail:'Sumatran tigers need large territories to survive — a single male can patrol up to 250 square kilometers. But Sumatra\'s forests are being destroyed at one of the world\'s fastest rates, primarily for palm oil and paper pulp plantations. In the last 25 years, Sumatra has lost over 50% of its forest cover. The tigers that remain are increasingly fragmented into small, isolated pockets.',
+    size:'75–140 kg',lifespan:'15–20 years (wild)',diet:'Deer, wild pig, tapir',offspringPerYear:'2–4 cubs every 2–2.5 years',
+    trendData:[600,560,520,480,450,430,410,405,400],trendYears:[2006,2008,2010,2012,2014,2016,2018,2020,2022]
+  },
+  {
+    id:'vaquita',cat:'CR',group:'marine',
+    common:'Vaquita',sci:'Phocoena sinus',
+    emoji:'🐬',biomeColor:'#0a1a2a',accentColor:'#3498db',
+    pop:'Under 10',trend:'critical',habitat:'Northern Gulf of California, Mexico',
+    range:'Gulf of California only',threats:['bycatch','illegal fishing','gillnets'],
+    desc:'The world\'s most critically endangered marine mammal, the vaquita is a small porpoise found only in Mexico\'s Gulf of California. With fewer than 10 individuals remaining, it teeters on the absolute brink of extinction.',
+    detail:'The vaquita — Spanish for "little cow" — was only scientifically described in 1958. It has never been kept in captivity, and almost everything we know about it comes from dead animals found in fishing nets. The primary killer is illegal fishing for the totoaba fish, whose swim bladder is smuggled to China where it fetches tens of thousands of dollars as a traditional medicine ingredient. Despite Mexican government gillnet bans and patrol vessels, illegal fishing continues.',
+    size:'30–55 kg',lifespan:'~21 years',diet:'Small fish, squid, crustaceans',offspringPerYear:'1 calf every 2 years',
+    trendData:[567,245,97,60,30,19,15,10,8],trendYears:[1997,2007,2012,2015,2016,2017,2018,2020,2022]
+  },
+  {
+    id:'mountain-gorilla',cat:'EN',group:'mammal',
+    common:'Mountain Gorilla',sci:'Gorilla beringei beringei',
+    emoji:'🦍',biomeColor:'#0f2010',accentColor:'#27ae60',
+    pop:'1,063',trend:'increasing',habitat:'Montane Forest, Virunga Mountains',
+    range:'Rwanda, Uganda, DRC',threats:['habitat loss','disease','human conflict'],
+    desc:'Mountain gorillas live in the mist-shrouded forests of the Virunga volcanoes at altitudes of 2,200–4,300 meters. Sharing 98.3% of human DNA, they are among our closest living relatives — and one of the great conservation success stories.',
+    detail:'Mountain gorillas were on the verge of extinction in the 1980s with fewer than 250 individuals. Three decades of intensive conservation — including the development of gorilla tourism that makes them worth more alive than dead — has more than quadrupled their population. Today 1,063 individuals roam the mountains. They remain endangered due to ongoing habitat pressure from the world\'s densest human populations surrounding the Virungas, and vulnerability to human diseases including COVID-19.',
+    size:'100–200 kg',lifespan:'35–40 years (wild)',diet:'Stems, bamboo, fruit, leaves',offspringPerYear:'1 infant every 4–6 years',
+    trendData:[250,300,380,480,620,786,880,1004,1063],trendYears:[1981,1989,1997,2003,2008,2013,2016,2019,2021]
+  },
+  {
+    id:'snow-leopard',cat:'VU',group:'mammal',
+    common:'Snow Leopard',sci:'Panthera uncia',
+    emoji:'🐾',biomeColor:'#1a1e2a',accentColor:'#95a5a6',
+    pop:'4,000–6,500',trend:'declining',habitat:'Central Asian Mountains, 3,000–4,500m',
+    range:'12 countries across Central Asia',threats:['prey depletion','retaliatory killing','habitat fragmentation','climate change'],
+    desc:'Ghosts of the mountains — so rarely seen that sightings remain extraordinary events even for researchers. The snow leopard\'s enormous tail (nearly as long as its body) acts as a blanket in the cold and a balance aid on steep terrain.',
+    detail:'Snow leopards patrol territories up to 1,000 square kilometers in some of the world\'s most remote mountain ranges — the Himalayas, Karakoram, Hindu Kush, Tian Shan, and Altai. Climate change is perhaps their greatest emerging threat: as temperatures rise, tree lines advance up mountains, shrinking the alpine habitat the cats depend on. Their prey — blue sheep and ibex — is also declining from competition with expanding livestock herds.',
+    size:'25–55 kg',lifespan:'15–18 years (wild)',diet:'Blue sheep, ibex, marmots',offspringPerYear:'2–3 cubs every 2 years',
+    trendData:[7500,7000,6500,6000,5500,5200,4800,4500,4200],trendYears:[1995,1998,2001,2004,2007,2010,2013,2016,2019]
+  },
+  {
+    id:'hawksbill-turtle',cat:'CR',group:'reptile',
+    common:'Hawksbill Sea Turtle',sci:'Eretmochelys imbricata',
+    emoji:'🐢',biomeColor:'#0a2015',accentColor:'#1abc9c',
+    pop:'8,000 nesting females',trend:'declining',habitat:'Tropical coral reefs globally',
+    range:'Tropical and subtropical oceans worldwide',threats:['poaching','bycatch','habitat degradation','climate change'],
+    desc:'Named for their narrow, pointed beak, hawksbill turtles are critical to coral reef ecosystems — they consume sponges that would otherwise outcompete the corals. Their beautiful shells, traded as "tortoiseshell," drove them to the edge of extinction.',
+    detail:'Hawksbill turtles have existed for over 100 million years, surviving the asteroid that killed the dinosaurs. But in the 20th century, human demand for their shells — used in combs, eyeglass frames, and jewelry — killed an estimated 9 million individuals. International trade was banned in 1977, but illegal trafficking continues. Climate change poses a new threat: warmer sand temperatures are skewing hatchling sex ratios toward 90%+ females, potentially undermining reproduction.',
+    size:'60–80 kg',lifespan:'30–50 years',diet:'Sea sponges, jellyfish, sea anemones',offspringPerYear:'3–5 clutches of 130–160 eggs every 2–3 years',
+    trendData:[35000,25000,18000,13000,10000,9000,8500,8200,8000],trendYears:[1980,1985,1990,1995,2000,2005,2010,2015,2020]
+  },
+  {
+    id:'african-elephant',cat:'VU',group:'mammal',
+    common:'African Forest Elephant',sci:'Loxodonta cyclotis',
+    emoji:'🐘',biomeColor:'#1a2010',accentColor:'#8e44ad',
+    pop:'100,000',trend:'declining',habitat:'Equatorial African rainforests',
+    range:'West and Central Africa',threats:['poaching','habitat fragmentation','human-wildlife conflict'],
+    desc:'Long overlooked as a subspecies of the African savanna elephant, the forest elephant was recognized as a distinct species in 2001. Smaller, straighter-tusked, and more elusive, it is an ecosystem engineer — its movements create forest clearings and disperse seeds that no other animal can carry.',
+    detail:'Forest elephants have been devastated by the ivory trade. Surveys suggest their population declined by more than 86% over 31 years — they were classified as Critically Endangered in 2021. They reproduce extremely slowly for their size — females don\'t begin breeding until age 23, and gestation lasts 22 months. This means populations can take decades to recover from poaching surges.',
+    size:'900–3,000 kg',lifespan:'60–70 years',diet:'Fruit, leaves, bark, grass',offspringPerYear:'1 calf every 5–6 years',
+    trendData:[700000,500000,350000,250000,175000,140000,120000,105000,100000],trendYears:[1979,1986,1990,1995,2000,2006,2011,2016,2021]
+  },
+  {
+    id:'saola',cat:'CR',group:'mammal',
+    common:'Saola',sci:'Pseudoryx nghetinhensis',
+    emoji:'🦌',biomeColor:'#1e2a0a',accentColor:'#2ecc71',
+    pop:'Unknown (possibly <100)',trend:'unknown',habitat:'Annamite Mountains, Vietnam/Laos',
+    range:'Vietnam and Laos',threats:['snare hunting','habitat loss','fragmentation'],
+    desc:'Discovered only in 1992 — one of the most spectacular zoological discoveries of the 20th century — the saola has never been photographed in the wild by a scientist. It exists in blurry camera trap images and the memories of hunters who set the snares that are killing it.',
+    detail:'The saola ("spindle horns" in Vietnamese) is so rare and elusive that no accurate population count has ever been made. What we do know is that the Annamite Mountains are laced with thousands of wire snares set for other animals — deer, pigs, and other bushmeat — and saola get caught as bycatch. Because saola are so rare that catching one brings no economic reward, hunters who accidentally snare them often don\'t even report it. The species may already be functionally extinct.',
+    size:'80–100 kg',lifespan:'Unknown',diet:'Figs, leaves, river plants',offspringPerYear:'Unknown',
+    trendData:[null,null,null,null,null,null,null,null,null],trendYears:[1992,1995,1998,2001,2004,2007,2010,2015,2020]
+  },
+  {
+    id:'california-condor',cat:'CR',group:'bird',
+    common:'California Condor',sci:'Gymnogyps californianus',
+    emoji:'🦅',biomeColor:'#1a1510',accentColor:'#e74c3c',
+    pop:'537 (313 wild)',trend:'increasing',habitat:'Rocky shrublands, coniferous forests, coastal cliffs',
+    range:'California, Arizona, Utah, Baja California',threats:['lead poisoning','power line collisions','habitat loss','microplastics'],
+    desc:'North America\'s largest land bird, with a wingspan of nearly 3 meters, the California condor is a living example of how extinction can be reversed with enough commitment. In 1987, all 27 remaining wild birds were captured to save the species. There are now 537 individuals.',
+    detail:'The condor\'s Lazarus story is one of the most technically complex species rescue operations in history. The entire wild population was caught, bred in captivity, and released back into the wild over 35 years. The primary ongoing threat is lead poisoning from ammunition — condors eat the remains of animals shot by hunters, and fragmenting lead bullets contaminate entire carcasses. California banned lead ammunition in 2019. This single policy change may determine whether condors can finally self-sustain without human intervention.',
+    size:'7–11.5 kg',lifespan:'60 years',diet:'Carrion exclusively',offspringPerYear:'1 egg every 2 years',
+    trendData:[27,52,94,155,218,313,380,430,537],trendYears:[1987,1992,1998,2003,2008,2014,2017,2019,2022]
+  },
+  {
+    id:'leatherback-turtle',cat:'VU',group:'marine',
+    common:'Leatherback Sea Turtle',sci:'Dermochelys coriacea',
+    emoji:'🌊',biomeColor:'#050d1a',accentColor:'#2980b9',
+    pop:'~34,000 nesting females',trend:'declining',habitat:'Open ocean, beaches for nesting',
+    range:'All oceans except Arctic/Antarctic',threats:['bycatch','beach development','plastic ingestion','climate change'],
+    desc:'The largest turtle on Earth and the only one without a hard shell — the leatherback is a living relic from the age of dinosaurs. It can dive to 1,270 meters and generate enough body heat to survive in near-freezing waters.',
+    detail:'Leatherbacks migrate further than any other reptile — some swim 20,000 km round-trips between nesting beaches in the tropics and feeding grounds in the North Atlantic. Their primary diet is jellyfish, which means they mistake plastic bags for food with lethal consequences. Pacific leatherback populations have declined by over 90% since the 1980s — from 90,000+ nesting females to under 3,000. Atlantic populations are more stable but face mounting pressure.',
+    size:'250–900 kg',lifespan:'45–50 years',diet:'Jellyfish, soft invertebrates',offspringPerYear:'4–7 clutches of 60–129 eggs every 2–3 years',
+    trendData:[115000,90000,70000,50000,30000,20000,15000,12000,10000],trendYears:[1980,1984,1988,1992,1996,2000,2004,2010,2016]
+  },
+  {
+    id:'kakapo',cat:'CR',group:'bird',
+    common:'Kākāpō',sci:'Strigops habroptilus',
+    emoji:'🦜',biomeColor:'#102010',accentColor:'#27ae60',
+    pop:'247',trend:'increasing',habitat:'Native forests on predator-free islands',
+    range:'Codfish Island, Anchor Island, Little Barrier Island (NZ)',threats:['invasive predators','low reproductive rate','genetic bottleneck'],
+    desc:'The world\'s only flightless parrot, the kākāpō is also the world\'s heaviest parrot. Nocturnal, slow-moving, and with a lifespan potentially exceeding 90 years, it evolved in an island with no mammalian predators — meaning it has no instinct to flee from cats, rats, or stoats.',
+    detail:'After Polynesians and then Europeans introduced predators to New Zealand, kākāpō crashed toward extinction. By 1995, only 51 individuals were known. Every single kākāpō has a name and is individually monitored by the New Zealand Department of Conservation\'s Kākāpō Recovery Programme. Breeding is supplemented by artificial insemination, fertility treatments, and genetic management. The current population of 247 represents a triumph of intensive intervention.',
+    size:'2–4 kg',lifespan:'Up to 90+ years',diet:'Fruits, seeds, leaves, rhizomes',offspringPerYear:'3–4 eggs every 2–4 years (boom years)',
+    trendData:[51,62,72,86,124,157,197,213,247],trendYears:[1995,1997,2000,2005,2009,2012,2016,2019,2022]
+  },
+  {
+    id:'blue-whale',cat:'EN',group:'marine',
+    common:'Blue Whale',sci:'Balaenoptera musculus',
+    emoji:'🐋',biomeColor:'#030a12',accentColor:'#1a75bc',
+    pop:'10,000–25,000',trend:'increasing',habitat:'All oceans',
+    range:'Global, all major oceans',threats:['ship strikes','entanglement','ocean noise','climate change'],
+    desc:'The largest animal ever known to exist — a blue whale\'s heart is the size of a small car, its tongue the weight of an elephant. Hunted to near-extinction in the 20th century, they are slowly recovering since the 1986 commercial whaling ban.',
+    detail:'Commercial whaling killed an estimated 360,000 blue whales in the Southern Ocean alone between 1904 and 1967 — one of the largest intentional destructions of a single species in recorded history. The global population was reduced to perhaps 1% of its pre-whaling size. Despite 40+ years of protection, recovery has been painfully slow due to low reproductive rates (one calf every 2–3 years) and new threats like ship strikes and ocean acidification affecting their krill food source.',
+    size:'100,000–180,000 kg',lifespan:'80–90 years',diet:'Krill almost exclusively',offspringPerYear:'1 calf every 2–3 years',
+    trendData:[1000,2000,4000,6000,8000,10000,13000,16000,20000],trendYears:[1970,1975,1980,1985,1990,1995,2000,2005,2010]
+  }
+];
+
+/* ══════════════════════════════════════════
+   RENDER SPECIES CARDS
+══════════════════════════════════════════ */
+function drawSpeciesArt(canvas, species){
+  const ctx=canvas.getContext('2d');const W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  // Background gradient
+  const bg=ctx.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,species.biomeColor);bg.addColorStop(1,adjustColor(species.biomeColor,15));
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  // Grid pattern
+  ctx.strokeStyle='rgba(255,255,255,0.03)';ctx.lineWidth=1;
+  for(let x=0;x<W;x+=20){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=20){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  // Accent glow
+  const glow=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,W*.6);
+  glow.addColorStop(0,species.accentColor+'22');glow.addColorStop(1,'transparent');
+  ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);
+  // Animal emoji
+  ctx.font=`${Math.min(W,H)*0.45}px serif`;
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.globalAlpha=0.85;ctx.fillText(species.emoji,W/2,H/2);ctx.globalAlpha=1;
+  // Trend sparkline at bottom
+  if(species.trendData&&species.trendData[0]!==null){
+    const d=species.trendData.filter(v=>v!==null);
+    const mn=Math.min(...d),mx2=Math.max(...d);
+    ctx.beginPath();ctx.globalAlpha=0.5;
+    d.forEach((v,i)=>{
+      const px=(i/(d.length-1))*(W-20)+10;
+      const py=H-10-((v-mn)/(mx2-mn||1))*(H*.25);
+      i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+    });
+    ctx.strokeStyle=species.cat==='CR'?'#e74c3c':species.cat==='EN'?'#e67e22':'#27ae60';
+    ctx.lineWidth=1.5;ctx.stroke();ctx.globalAlpha=1;
+  }
+}
+function adjustColor(hex,pct){return hex;} // simplified
+
+const grid=document.getElementById('speciesGrid');
+SPECIES_DATA.forEach(sp=>{
+  const card=document.createElement('div');
+  card.className='species-card';
+  card.dataset.cat=sp.cat;card.dataset.group=sp.group;
+  card.innerHTML=`
+<div class="sc-image"><canvas width="400" height="200"></canvas>
+<div class="sc-status-pill ${sp.cat.toLowerCase()}">${sp.cat==='CR'?'Critically Endangered':sp.cat==='EN'?'Endangered':'Vulnerable'}</div></div>
+<div class="sc-body">
+  <div class="sc-common">${sp.common}</div>
+  <div class="sc-sci">${sp.sci}</div>
+  <div class="sc-desc">${sp.desc}</div>
+  <div class="sc-stats">
+    <div class="sc-stat"><div class="sc-stat-num">${sp.pop}</div><div class="sc-stat-lbl">Est. Population</div></div>
+    <div class="sc-stat"><div class="sc-stat-num">${sp.habitat.split(',')[0]}</div><div class="sc-stat-lbl">Primary Habitat</div></div>
+  </div>
+  <div class="sc-threats">${sp.threats.map(t=>`<span class="threat-tag">${t}</span>`).join('')}</div>
+  <button class="sc-action" onclick="openModal('${sp.id}')">View Full Species Report →</button>
+</div>`;
+  drawSpeciesArt(card.querySelector('canvas'),sp);
+  grid.appendChild(card);
+});
+
+function filterSpecies(type,btn){
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.species-card').forEach(c=>{
+    const show=type==='all'||(type==='CR'||type==='EN'||type==='VU')?c.dataset.cat===type:c.dataset.group===type;
+    const showAll=type==='all';
+    c.classList.toggle('hidden',!showAll&&!show);
+  });
+}
+
+/* ══════════════════════════════════════════
+   SPECIES MODAL
+══════════════════════════════════════════ */
+function openModal(id){
+  const sp=SPECIES_DATA.find(s=>s.id===id);if(!sp)return;
+  const mc=document.getElementById('modal-canvas');
+  mc.width=1000;mc.height=380;
+  drawSpeciesArtLarge(mc,sp);
+  const catLabel=sp.cat==='CR'?'Critically Endangered':sp.cat==='EN'?'Endangered':sp.cat==='VU'?'Vulnerable':'Near Threatened';
+  const catClass=sp.cat.toLowerCase();
+  document.getElementById('modalBody').innerHTML=`
+<div class="modal-status ${catClass}">${catLabel}</div>
+<div class="modal-name">${sp.common}</div>
+<div class="modal-sci">${sp.sci}</div>
+<div class="modal-grid">
+  <div>
+    <div class="modal-body-text">
+      <p>${sp.desc}</p>
+      <p>${sp.detail}</p>
+    </div>
+    <div class="modal-chart-section">
+      <div class="modal-chart-title">Population Trend ${sp.trendYears?.[0]}–${sp.trendYears?.[sp.trendYears.length-1]}</div>
+      <canvas id="modal-pop-chart" width="600" height="160" style="width:100%;border:1px solid #1e1f1a;"></canvas>
+    </div>
+  </div>
+  <div>
+    <div class="modal-facts">
+      <div class="modal-fact-row"><div class="modal-fact-key">Population</div><div class="modal-fact-val">${sp.pop} individuals</div></div>
+      <div class="modal-fact-row"><div class="modal-fact-key">IUCN Status</div><div class="modal-fact-val">${catLabel}</div></div>
+      <div class="modal-fact-row"><div class="modal-fact-key">Habitat</div><div class="modal-fact-val">${sp.habitat}</div></div>
+      <div class="modal-fact-row"><div class="modal-fact-key">Range</div><div class="modal-fact-val">${sp.range}</div></div>
+      <div class="modal-fact-row"><div class="modal-fact-key">Weight</div><div class="modal-fact-val">${sp.size}</div></div>
+      <div class="modal-fact-row"><div class="modal-fact-key">Lifespan</div><div class="modal-fact-val">${sp.lifespan}</div></div>
+      <div class="modal-fact-row"><div class="modal-fact-key">Diet</div><div class="modal-fact-val">${sp.diet}</div></div>
+      <div class="modal-fact-row"><div class="modal-fact-key">Reproduction</div><div class="modal-fact-val">${sp.offspringPerYear}</div></div>
+      <div class="modal-fact-row"><div class="modal-fact-key">Primary Threats</div><div class="modal-fact-val">${sp.threats.join(', ')}</div></div>
+      <div class="modal-fact-row"><div class="modal-fact-key">Trend</div><div class="modal-fact-val" style="color:${sp.trend==='increasing'?'#27ae60':sp.trend==='declining'?'#e74c3c':'#e67e22'}">${sp.trend.toUpperCase()}</div></div>
+    </div>
+  </div>
+</div>`;
+  document.getElementById('speciesModal').classList.add('open');
+  document.body.style.overflow='hidden';
+  setTimeout(()=>{drawModalChart(sp);},100);
+}
+
+function drawSpeciesArtLarge(canvas,sp){
+  const ctx=canvas.getContext('2d');const W=canvas.width,H=canvas.height;
+  const bg=ctx.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,sp.biomeColor);bg.addColorStop(1,'#0a0b08');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  for(let x=0;x<W;x+=30){ctx.strokeStyle='rgba(255,255,255,0.02)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  const glow=ctx.createRadialGradient(W*.35,H*.5,0,W*.35,H*.5,W*.4);
+  glow.addColorStop(0,sp.accentColor+'33');glow.addColorStop(1,'transparent');
+  ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);
+  ctx.font=`${H*0.7}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.globalAlpha=0.7;
+  ctx.fillText(sp.emoji,W*0.18,H/2);ctx.globalAlpha=1;
+}
+
+function drawModalChart(sp){
+  const canvas=document.getElementById('modal-pop-chart');if(!canvas)return;
+  const ctx=canvas.getContext('2d');const W=canvas.width,H=canvas.height;
+  const d=sp.trendData,yrs=sp.trendYears;
+  const validD=d.filter(v=>v!==null);
+  if(validD.length<2){
+    ctx.fillStyle='#1e1f1a';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#4a4a3a';ctx.font='12px DM Mono';ctx.textAlign='center';
+    ctx.fillText('Population data unavailable — species too rare to survey',W/2,H/2);return;
+  }
+  ctx.fillStyle='#0e0f0b';ctx.fillRect(0,0,W,H);
+  const PAD=48,PB=28;
+  const mn=0,mx2=Math.max(...validD)*1.1;
+  const colY=y=>PAD+(1-(y-mn)/(mx2-mn))*(H-PAD-PB);
+  const colX=i=>(PAD+(i/(d.length-1))*(W-PAD-12));
+  // grid
+  for(let i=0;i<=4;i++){
+    const y=PAD+(i/4)*(H-PAD-PB);
+    ctx.strokeStyle='#1e1f1a';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(PAD,y);ctx.lineTo(W-12,y);ctx.stroke();ctx.setLineDash([]);
+    const v=Math.round(mx2*(1-i/4));
+    ctx.fillStyle='#4a4a3a';ctx.font='8px DM Mono';ctx.textAlign='right';
+    ctx.fillText(v.toLocaleString(),PAD-6,y+3);
+  }
+  // fill
+  const fillGrad=ctx.createLinearGradient(0,PAD,0,H-PB);
+  const trendColor=sp.cat==='CR'?'#e74c3c':sp.cat==='EN'?'#e67e22':'#27ae60';
+  fillGrad.addColorStop(0,trendColor+'44');fillGrad.addColorStop(1,'transparent');
+  ctx.beginPath();
+  d.forEach((v,i)=>{if(v===null)return;const px=colX(i),py=colY(v);i===0||d[i-1]===null?ctx.moveTo(px,py):ctx.lineTo(px,py);});
+  ctx.lineTo(colX(d.length-1),H-PB);ctx.lineTo(colX(0),H-PB);ctx.closePath();
+  ctx.fillStyle=fillGrad;ctx.fill();
+  // line
+  ctx.beginPath();
+  let first=true;
+  d.forEach((v,i)=>{if(v===null)return;const px=colX(i),py=colY(v);first?(ctx.moveTo(px,py),first=false):ctx.lineTo(px,py);});
+  ctx.strokeStyle=trendColor;ctx.lineWidth=2;ctx.stroke();
+  // dots + year labels
+  d.forEach((v,i)=>{
+    if(v===null)return;
+    ctx.beginPath();ctx.arc(colX(i),colY(v),3,0,Math.PI*2);ctx.fillStyle=trendColor;ctx.fill();
+    if(i%2===0){ctx.fillStyle='#4a4a3a';ctx.font='7px DM Mono';ctx.textAlign='center';ctx.fillText(yrs[i],colX(i),H-8);}
+  });
+}
+
+function closeModal(){document.getElementById('speciesModal').classList.remove('open');document.body.style.overflow='';}
+
+/* ══════════════════════════════════════════
+   BIOME DATA
+══════════════════════════════════════════ */
+const BIOME_DATA={
+  rainforest:{
+    title:'Tropical Rainforest',emoji:'🌿',
+    desc:`Home to more than 50% of all Earth's species on just 6% of its land surface, tropical rainforests are the planet's biodiversity engine. The Amazon alone hosts 10% of all species ever described. But at current rates of deforestation, the Amazon could reach a tipping point by 2025–2030 beyond which it begins to self-destruct — releasing stored carbon and collapsing the moisture cycle that sustains South American agriculture.`,
+    desc2:`The Congo Basin, second only to the Amazon, faces accelerating pressure from mineral extraction and subsistence agriculture. Borneo and Sumatra — once contiguous forest — are now fragmented islands of habitat surrounded by palm oil and paper pulp monocultures.`,
+    stats:[{k:'Area Remaining',v:'3.7 billion ha'},{k:'Annual Loss',v:'10 million ha'},{k:'Endemic Species',v:'~1.5 million'},{k:'Deforestation Rate',v:'1% per decade'},{k:'Carbon Stock',v:'250 Gt CO₂'}],
+    species:['Sumatran Tiger','Pygmy Elephant','Harpy Eagle','Amazon River Dolphin','Okapi','Proboscis Monkey'],
+    canvasColor:'#0d2a10'
+  },
+  ocean:{
+    title:'Deep Ocean',emoji:'🌊',
+    desc:`The deep ocean — waters below 200 meters — covers over 65% of Earth's surface and holds 97% of its living space. Yet it remains less explored than the surface of Mars. The species that have been discovered are extraordinary: bioluminescent creatures, organisms that live at pressures 1,000× surface levels, and communities that survive without sunlight by processing toxic chemicals from hydrothermal vents.`,
+    desc2:`Climate change, deep-sea mining, and trawl fishing now threaten ecosystems that have never been directly observed. Ocean acidification is dissolving the calcium carbonate structures that deep-sea corals — some thousands of years old — depend on.`,
+    stats:[{k:'Area',v:'335 million km²'},{k:'Described Species',v:'~250,000'},{k:'Estimated Species',v:'~2 million'},{k:'pH Change',v:'-0.1 since 1800'},{k:'Species Surveyed',v:'<0.1%'}],
+    species:['Blue Whale','Sperm Whale','Giant Squid','Whale Shark','Leatherback Turtle','Humphead Wrasse'],
+    canvasColor:'#02080f'
+  },
+  savanna:{
+    title:'African Savanna',emoji:'🌾',
+    desc:`The African savanna is Earth's most iconic wildlife landscape — home to the great migrations of wildebeest and zebra, the predator-prey dynamics that define our image of nature. But these landscapes are not static wilderness. They are the product of millennia of co-evolution between megafauna, fire, and human herders.`,
+    desc2:`The savanna is shrinking from both sides: agricultural expansion from below, and desertification from the advancing Sahara above. The loss of key species like the elephant — the "ecosystem engineer" that creates waterholes, disperses seeds, and keeps grasslands open — cascades through entire food webs.`,
+    stats:[{k:'Area',v:'11.5 million km²'},{k:'Megafauna Species',v:'28'},{k:'Lion Population',v:'~20,000'},{k:'Elephant Range Loss',v:'65% since 1980'},{k:'Protected Area',v:'14% of savanna'}],
+    species:['African Lion','African Wild Dog','Cheetah','Black Rhinoceros','Grevy\'s Zebra','Secretary Bird'],
+    canvasColor:'#1a1005'
+  },
+  arctic:{
+    title:'Arctic Tundra',emoji:'❄️',
+    desc:`The Arctic is warming four times faster than the global average — making it the biome most immediately transformed by climate change. Permafrost that has been frozen for tens of thousands of years is thawing, releasing stored methane and CO₂ in a feedback loop that could accelerate global warming far beyond current projections.`,
+    desc2:`Species adapted to permanent ice and cold — polar bears, Arctic foxes, walruses, and narwhals — have no higher latitude to retreat to. Their habitat is simply disappearing. Meanwhile, new species from the south are moving north, competing for the resources and niches that Arctic species evolved to occupy over millions of years.`,
+    stats:[{k:'Area',v:'7.1 million km²'},{k:'Warming Rate',v:'4× global average'},{k:'Permafrost Thaw',v:'1.2 million km² at risk'},{k:'Polar Bear Pop.',v:'~26,000'},{k:'Sea Ice Loss',v:'13% per decade'}],
+    species:['Polar Bear','Narwhal','Walrus','Arctic Fox','Beluga Whale','Snowy Owl'],
+    canvasColor:'#05101a'
+  },
+  coral:{
+    title:'Coral Reefs',emoji:'🪸',
+    desc:`Coral reefs cover less than 0.1% of the ocean floor yet support 25% of all marine species. They are the rainforests of the sea — ancient, irreplaceable, and extraordinarily productive. The Great Barrier Reef alone generates $6.4 billion annually for the Australian economy.`,
+    desc2:`Climate change is the existential threat. When ocean temperatures rise by even 1–2°C, corals expel the symbiotic algae that give them color and nutrients — a process called bleaching. If temperatures don't return to normal within weeks, the coral dies. Repeated bleaching events are now occurring faster than reefs can recover. The Great Barrier Reef experienced five mass bleaching events between 2016 and 2024.`,
+    stats:[{k:'Global Area',v:'284,000 km²'},{k:'Species Dependent',v:'~8,000'},{k:'Bleached 2016-2020',v:'Over 50%'},{k:'Projected Loss by 2050',v:'70–90%'},{k:'Value per km²',v:'$1 million/yr'}],
+    species:['Hawksbill Turtle','Humphead Wrasse','Bumphead Parrotfish','Giant Clam','Napoleon Wrasse','Pygmy Seahorse'],
+    canvasColor:'#030e14'
+  },
+  mangrove:{
+    title:'Mangrove Forests',emoji:'🌱',
+    desc:`Mangroves are among the most productive and valuable ecosystems on Earth, yet they have been invisible in global conservation conversations until recently. Growing in the intertidal zone where salt water meets fresh, they provide nursery habitat for over 1,500 fish species, protect coastlines from storms with the force of concrete seawalls, and store carbon at rates up to 10× higher per hectare than tropical rainforests.`,
+    desc2:`Since 1980, the world has lost 50% of its mangrove forests — primarily to shrimp aquaculture, coastal development, and logging. What remains faces increasing salinity as sea levels rise and storm surge intensifies. In some regions, entire mangrove belts are dying simultaneously — a phenomenon researchers have called "mass dieback."`,
+    stats:[{k:'Global Area',v:'137,000 km²'},{k:'Loss Since 1980',v:'~50%'},{k:'Carbon Stored',v:'11.7 Gt CO₂'},{k:'Fish Species Dependent',v:'1,500+'},{k:'Annual Loss',v:'1–2%'}],
+    species:['Saltwater Crocodile','Proboscis Monkey','Fishing Cat','Dugong','Bengal Tiger','Milky Stork'],
+    canvasColor:'#050f08'
+  }
+};
+
+function buildBiomePanel(key){
+  const b=BIOME_DATA[key];
+  return `<div class="biome-info">
+    <h3>${b.title}</h3>
+    <p>${b.desc}</p>
+    <p>${b.desc2}</p>
+    <div class="biome-stats-list">
+      ${b.stats.map(s=>`<div class="biome-stat-row"><div class="biome-stat-key">${s.k}</div><div class="biome-stat-val">${s.v}</div></div>`).join('')}
+    </div>
+  </div>
+  <div class="biome-visual">
+    <canvas id="biome-canvas-${key}" height="280" style="background:${b.canvasColor};"></canvas>
+    <div class="biome-species-list">${b.species.map(s=>`<div class="biome-sp-item"><strong>${s}</strong><em>Species at risk</em></div>`).join('')}</div>
+  </div>`;
+}
+
+function switchBiome(key,btn){
+  document.querySelectorAll('.biome-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  const panels=document.getElementById('biomePanels');
+  panels.innerHTML=`<div class="biome-panel active">${buildBiomePanel(key)}</div>`;
+  setTimeout(()=>drawBiomeCanvas(key),50);
+}
+
+// Build initial panel
+document.getElementById('biomePanels').innerHTML=`<div class="biome-panel active">${buildBiomePanel('rainforest')}</div>`;
+setTimeout(()=>drawBiomeCanvas('rainforest'),100);
+
+function drawBiomeCanvas(key){
+  const canvas=document.getElementById(`biome-canvas-${key}`);if(!canvas)return;
+  canvas.width=canvas.offsetWidth||600;
+  const ctx=canvas.getContext('2d');const W=canvas.width,H=280;
+  const b=BIOME_DATA[key];
+  ctx.fillStyle=b.canvasColor;ctx.fillRect(0,0,W,H);
+  // Unique visualization per biome
+  if(key==='rainforest'){
+    // Tree canopy silhouettes
+    for(let i=0;i<20;i++){
+      const x=Math.random()*W,h=60+Math.random()*100;
+      const g=ctx.createRadialGradient(x,H-h,0,x,H-h,h*.6);
+      g.addColorStop(0,'rgba(20,60,20,0.8)');g.addColorStop(1,'transparent');
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,H-h,h*.45,0,Math.PI*2);ctx.fill();
+    }
+    // Biodiversity dots
+    const cols=['#e74c3c','#27ae60','#3498db','#f39c12','#9b59b6','#1abc9c'];
+    for(let i=0;i<60;i++){ctx.beginPath();ctx.arc(Math.random()*W,Math.random()*H,2+Math.random()*3,0,Math.PI*2);ctx.fillStyle=cols[i%cols.length];ctx.globalAlpha=.4+Math.random()*.4;ctx.fill();ctx.globalAlpha=1;}
+  } else if(key==='ocean'){
+    // Wave layers
+    for(let layer=0;layer<4;layer++){
+      ctx.beginPath();ctx.moveTo(0,H);
+      for(let x=0;x<=W;x+=4) ctx.lineTo(x,H*(.3+layer*.15)+Math.sin(x*.02+layer)*18);
+      ctx.lineTo(W,H);ctx.closePath();
+      ctx.fillStyle=`rgba(15,50,100,${.15+layer*.1})`;ctx.fill();
+    }
+    // Bioluminescent dots
+    for(let i=0;i<40;i++){ctx.beginPath();const x=Math.random()*W,y=Math.random()*H*.7+H*.1;ctx.arc(x,y,1+Math.random()*2,0,Math.PI*2);ctx.fillStyle='#00ffff';ctx.globalAlpha=.1+Math.random()*.3;ctx.fill();ctx.globalAlpha=1;}
+  } else if(key==='arctic'){
+    // Ice landscape
+    ctx.fillStyle='rgba(150,200,255,0.1)';
+    for(let i=0;i<8;i++){ctx.beginPath();const bx=Math.random()*W;ctx.moveTo(bx,H);ctx.lineTo(bx-20,H*.4+Math.random()*H*.2);ctx.lineTo(bx+20,H*.4+Math.random()*H*.2);ctx.closePath();ctx.fill();}
+    // Aurora
+    for(let i=0;i<3;i++){const ag=ctx.createLinearGradient(0,0,W,0);ag.addColorStop(0,'transparent');ag.addColorStop(.3,'rgba(0,255,100,0.06)');ag.addColorStop(.7,'rgba(0,200,255,0.06)');ag.addColorStop(1,'transparent');ctx.fillStyle=ag;ctx.fillRect(0,i*40,W,30);}
+  } else if(key==='coral'){
+    // Coral shapes
+    const coralCols=['#e74c3c','#e67e22','#f1c40f','#1abc9c','#9b59b6'];
+    for(let i=0;i<25;i++){const x=Math.random()*W,y=H*.5+Math.random()*H*.4,h=20+Math.random()*60;ctx.strokeStyle=coralCols[i%coralCols.length];ctx.lineWidth=2;ctx.globalAlpha=.3+Math.random()*.4;ctx.beginPath();ctx.moveTo(x,y);for(let j=0;j<5;j++){ctx.lineTo(x+(Math.random()-.5)*20,y-h*(j/5));}ctx.stroke();ctx.globalAlpha=1;}
+  } else {
+    // Generic: gradient + dots
+    const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'rgba(0,100,0,.1)');g.addColorStop(1,'transparent');
+    ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    for(let i=0;i<30;i++){ctx.beginPath();ctx.arc(Math.random()*W,Math.random()*H,3+Math.random()*8,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.04)';ctx.fill();}
+  }
+}
+
+/* ══════════════════════════════════════════
+   THREATS DATA
+══════════════════════════════════════════ */
+const THREATS=[
+  {
+    icon:'🌳',name:'Habitat Destruction',num:'01',
+    desc:'The leading cause of species extinction globally. Natural habitats are converted to agriculture (80%), urban development (10%), and infrastructure (10%). An area the size of a football field is destroyed every single second.',
+    impacts:[{label:'Mammals',pct:85},{label:'Birds',pct:79},{label:'Reptiles',pct:67},{label:'Amphibians',pct:91},{label:'Plants',pct:88}],color:'#c0392b'
+  },
+  {
+    icon:'🎯',name:'Overexploitation',num:'02',
+    desc:'Hunting, poaching, fishing, and harvesting at rates that exceed populations\' ability to reproduce. The global illegal wildlife trade is estimated at $23 billion annually — the 4th largest criminal enterprise in the world.',
+    impacts:[{label:'Marine Fish',pct:76},{label:'Primates',pct:58},{label:'Reptiles',pct:52},{label:'Large Mammals',pct:70},{label:'Birds',pct:45}],color:'#e67e22'
+  },
+  {
+    icon:'🌡️',name:'Climate Change',num:'03',
+    desc:'Temperature increases, shifting precipitation patterns, ocean acidification, and extreme weather events are disrupting ecosystems faster than species can adapt. The IPCC projects that 18% of species face high extinction risk at 1.5°C warming; 36% at 3°C.',
+    impacts:[{label:'Marine Species',pct:95},{label:'Polar Species',pct:88},{label:'Coral Reefs',pct:72},{label:'Alpine Species',pct:65},{label:'Migratory Birds',pct:48}],color:'#c0392b'
+  },
+  {
+    icon:'☠️',name:'Invasive Species',num:'04',
+    desc:'Species introduced to new environments — accidentally or intentionally — that outcompete, predate, or carry diseases fatal to native wildlife. On islands, invasives have been responsible for 54% of known animal extinctions since 1500.',
+    impacts:[{label:'Island Birds',pct:72},{label:'Freshwater Fish',pct:68},{label:'Native Plants',pct:58},{label:'Small Mammals',pct:63},{label:'Amphibians',pct:54}],color:'#8e44ad'
+  },
+  {
+    icon:'💧',name:'Pollution',num:'05',
+    desc:'Chemical, plastic, light, and noise pollution disrupt breeding, migration, feeding, and communication. An estimated 8 million metric tons of plastic enter the oceans annually. 90% of seabirds have plastic in their stomachs.',
+    impacts:[{label:'Marine Mammals',pct:82},{label:'Seabirds',pct:90},{label:'Sea Turtles',pct:78},{label:'Freshwater Life',pct:65},{label:'Amphibians',pct:55}],color:'#27ae60'
+  },
+  {
+    icon:'🦠',name:'Disease',num:'06',
+    desc:'Chytridiomycosis fungus has driven 90 amphibian species extinct since 1980 in the most devastating recorded wildlife disease event in history. White-nose syndrome has killed over 90% of some North American bat populations.',
+    impacts:[{label:'Amphibians',pct:68},{label:'Bats',pct:55},{label:'Bees',pct:40},{label:'Seabirds',pct:32},{label:'Primates',pct:28}],color:'#2980b9'
+  }
+];
+
+const tLayout=document.getElementById('threatsLayout');
+THREATS.forEach(th=>{
+  const el=document.createElement('div');
+  el.className='threat-block';
+  el.innerHTML=`<div class="threat-block-num">${th.num}</div>
+<span class="threat-icon">${th.icon}</span>
+<div class="threat-name">${th.name}</div>
+<div class="threat-desc">${th.desc}</div>
+<div class="threat-impact">
+${th.impacts.map(im=>`<div class="threat-row">
+  <div class="threat-row-label">${im.label}</div>
+  <div class="threat-bar"><div class="threat-fill" data-w="${im.pct}" style="background:${th.color}"></div></div>
+  <div class="threat-pct">${im.pct}%</div>
+</div>`).join('')}
+</div>`;
+  tLayout.appendChild(el);
+});
+
+/* ══════════════════════════════════════════
+   WORLD MAP
+══════════════════════════════════════════ */
+const worldCanvas=document.getElementById('world-canvas');
+const wCtx=worldCanvas.getContext('2d');
+
+function resizeMap(){
+  worldCanvas.width=worldCanvas.offsetWidth||1000;
+  drawWorldMap();
+}
+
+const MAP_HOTSPOTS=[
+  {name:'Amazon Basin',x:.19,y:.62,col:'#c0392b',size:14,species:'Sumatran Tiger (Analogous)',detail:'8,000+ threatened species\nDeforestation rate: 1.2M ha/yr'},
+  {name:'Congo Rainforest',x:.495,y:.585,col:'#c0392b',size:12,species:'Forest Elephant',detail:'10,000+ endemic species\nGorilla stronghold'},
+  {name:'Southeast Asia',x:.73,y:.48,col:'#c0392b',size:13,species:'Sumatran Tiger, Orangutan',detail:'Fastest deforestation rate\n50% forest loss in 25 yrs'},
+  {name:'Coral Triangle',x:.77,y:.57,col:'#e67e22',size:10,species:'Hawksbill Turtle, Dugong',detail:'73,000 km² of reef\n76% of all coral species'},
+  {name:'Mesoamerica',x:.175,y:.5,col:'#f1c40f',size:9,species:'Jaguar, Scarlet Macaw',detail:'7% of global biodiversity\n24,000 species'},
+  {name:'Atlantic Forest',x:.27,y:.73,col:'#e67e22',size:9,species:'Golden Lion Tamarin',detail:'15% of original forest remains\n8,000 endemic species'},
+  {name:'Cape Floristic',x:.49,y:.79,col:'#27ae60',size:8,species:'Protea, Cape Sugarbird',detail:'9,600 plant species\n69% endemic'},
+  {name:'Mediterranean',x:.48,y:.34,col:'#f1c40f',size:9,species:'Iberian Lynx, Monk Seal',detail:'25,000 plant species\nOlive expansion threatening'},
+  {name:'Mountains of SW China',x:.72,y:.38,col:'#e67e22',size:9,species:'Giant Panda, Red Panda',detail:'Giant panda habitat core\n5,000+ plant species'},
+  {name:'Indo-Burma',x:.7,y:.44,col:'#c0392b',size:10,species:'Saola, Irrawaddy Dolphin',detail:'10,000+ plant species\nSaola last refuge'},
+  {name:'New Guinea',x:.82,y:.63,col:'#f1c40f',size:9,species:'Tree Kangaroo, Bird of Paradise',detail:'800+ bird species\n5% world\'s ecosystems'},
+  {name:'Southwestern Australia',x:.77,y:.77,col:'#27ae60',size:8,species:'Numbat, Quokka',detail:'5,700 endemic plants\nWorldwide fire threat'},
+  {name:'East African Rift',x:.54,y:.57,col:'#c0392b',size:9,species:'Mountain Gorilla, Okapi',detail:'Unique cichlid species\n1,000+ endemic species'},
+  {name:'Arctic Ocean',x:.5,y:.05,col:'#2980b9',size:11,species:'Polar Bear, Narwhal',detail:'Sea ice -13% per decade\n4× global warming rate'},
+  {name:'Caribbean',x:.23,y:.44,col:'#2980b9',size:8,species:'Leatherback Turtle',detail:'8,000+ species\n30% reef bleached 2023'},
+];
+
+const WORLD_REGIONS=[
+  {name:'Amazon & Atlantic Forest',count:8340,maxCount:8340},{name:'Southeast Asia',count:7892,maxCount:8340},
+  {name:'Congo Basin',count:7104,maxCount:8340},{name:'Coral Triangle',count:5580,maxCount:8340},
+  {name:'Madagascar',count:4820,maxCount:8340},{name:'Mesoamerica',count:4210,maxCount:8340},
+  {name:'Indo-Burma',count:3940,maxCount:8340},{name:'Mediterranean Basin',count:2580,maxCount:8340},
+  {name:'New Caledonia',count:1980,maxCount:8340},{name:'Sundaland',count:1875,maxCount:8340},
+];
+
+const regionList=document.getElementById('regionList');
+WORLD_REGIONS.forEach(r=>{
+  const el=document.createElement('div');el.className='map-region-card';
+  el.innerHTML=`<div class="mrg-name">${r.name}</div>
+<div class="mrg-count">${r.count.toLocaleString()} threatened species</div>
+<div class="mrg-bar"><div class="mrg-fill" data-w="${Math.round(r.count/r.maxCount*100)}"></div></div>`;
+  regionList.appendChild(el);
+});
+
+function drawWorldMap(){
+  const W=worldCanvas.width,H=480;
+  worldCanvas.height=H;
+  wCtx.clearRect(0,0,W,H);
+  wCtx.fillStyle='#f0ead6';wCtx.fillRect(0,0,W,H);
+  // Ocean
+  wCtx.fillStyle='#d4e8f0';wCtx.fillRect(0,0,W,H);
+  // Simple continent shapes (proportional)
+  const C={};
+  C.northAmerica=[[.08,.12],[.22,.08],[.3,.14],[.32,.26],[.28,.38],[.22,.42],[.16,.36],[.1,.28],[.06,.2]];
+  C.southAmerica=[[.19,.46],[.28,.42],[.33,.48],[.35,.6],[.31,.78],[.24,.82],[.18,.74],[.16,.6],[.17,.5]];
+  C.europe=[[.36,.1],[.54,.06],[.6,.12],[.58,.22],[.52,.26],[.44,.24],[.38,.18]];
+  C.africa=[[.39,.28],[.56,.26],[.62,.32],[.62,.52],[.56,.76],[.48,.84],[.4,.8],[.36,.64],[.34,.44],[.36,.32]];
+  C.asia=[[.54,.08],[.7,.05],[.86,.1],[.95,.22],[.92,.36],[.82,.44],[.7,.42],[.6,.38],[.56,.28],[.52,.18]];
+  C.australia=[[.7,.6],[.85,.56],[.93,.62],[.94,.72],[.86,.82],[.74,.82],[.68,.74],[.66,.66]];
+  C.greenland=[[.21,.04],[.3,.03],[.32,.1],[.26,.14],[.2,.12]];
+  C.newZealand=[[.92,.74],[.94,.8],[.91,.86],[.89,.78]];
+
+  function drawContinent(pts,fill,stroke){
+    const sp=pts.map(([x,y])=>[x*W,y*H]);
+    wCtx.beginPath();sp.forEach(([x,y],i)=>i===0?wCtx.moveTo(x,y):wCtx.lineTo(x,y));
+    wCtx.closePath();wCtx.fillStyle=fill;wCtx.fill();
+    wCtx.strokeStyle=stroke;wCtx.lineWidth=1;wCtx.stroke();
+  }
+
+  drawContinent(C.greenland,'#e8e0d0','#c8bfa8');
+  drawContinent(C.northAmerica,'#e8dfc8','#c8bfa8');
+  drawContinent(C.southAmerica,'#e8dfc8','#c8bfa8');
+  drawContinent(C.europe,'#e8dfc8','#c8bfa8');
+  drawContinent(C.africa,'#e8dfc8','#c8bfa8');
+  drawContinent(C.asia,'#e8dfc8','#c8bfa8');
+  drawContinent(C.australia,'#e8dfc8','#c8bfa8');
+  drawContinent(C.newZealand,'#e8dfc8','#c8bfa8');
+
+  // Hotspot markers
+  MAP_HOTSPOTS.forEach(h=>{
+    const x=h.x*W,y=h.y*H;
+    // Pulse ring
+    wCtx.beginPath();wCtx.arc(x,y,h.size*1.8,0,Math.PI*2);
+    wCtx.strokeStyle=h.col+'55';wCtx.lineWidth=1.5;wCtx.stroke();
+    // Dot
+    wCtx.beginPath();wCtx.arc(x,y,h.size/2,0,Math.PI*2);
+    wCtx.fillStyle=h.col;wCtx.fill();
+  });
+
+  // Tooltip on hover
+  worldCanvas.onmousemove=e=>{
+    const r=worldCanvas.getBoundingClientRect();
+    const px=(e.clientX-r.left)*(W/r.width);
+    const py=(e.clientY-r.top)*(H/r.height);
+    const tooltip=document.getElementById('mapTooltip');
+    let found=null;
+    MAP_HOTSPOTS.forEach(h=>{if(Math.hypot(px-h.x*W,py-h.y*H)<h.size*2)found=h;});
+    if(found){
+      tooltip.style.opacity='1';
+      tooltip.style.left=(e.clientX-r.left+12)+'px';
+      tooltip.style.top=(e.clientY-r.top-10)+'px';
+      tooltip.innerHTML=`<div style="color:${found.col};margin-bottom:4px;letter-spacing:.15em;">${found.name}</div>${found.detail.replace(/\n/g,'<br>')}`;
+    } else {
+      tooltip.style.opacity='0';
+    }
+  };
+}
+
+resizeMap();window.addEventListener('resize',resizeMap);
+
+/* ══════════════════════════════════════════
+   CONSERVATION TIMELINE
+══════════════════════════════════════════ */
+const TL_ITEMS=[
+  {year:'1872',title:'Yellowstone: The World\'s First National Park',body:'President Ulysses Grant signs the Yellowstone National Park Protection Act, establishing the first national park in the world and the first intentional large-scale wildlife protection in human history.',badge:'milestone',badgeLabel:'First National Park'},
+  {year:'1900',title:'Lacey Act — America Bans Wildlife Trafficking',body:'The first US federal wildlife protection law prohibits the transport of illegally taken wildlife across state lines. Passes in direct response to the near-extinction of passenger pigeons (then numbering in the billions) and massive plume hunting of herons and egrets.',badge:'milestone',badgeLabel:'First US Federal Protection'},
+  {year:'1914',title:'Martha: The Last Passenger Pigeon Dies',body:'Martha, the last known passenger pigeon, dies at the Cincinnati Zoo. Once the most numerous bird in North America with flocks of billions that darkened the sky for hours, the species was hunted to extinction in 50 years. It became the defining image of human-caused extinction.',badge:'loss',badgeLabel:'Extinction Event'},
+  {year:'1948',title:'IUCN Founded',body:'The International Union for Conservation of Nature is established as the world\'s first global environmental organization. Today its Red List of Threatened Species is the world\'s most comprehensive information source on the conservation status of animals, plants and fungi.',badge:'milestone',badgeLabel:'IUCN Founded'},
+  {year:'1963',title:'Bald Eagle Nearly Goes Extinct',body:'The US national symbol falls to just 487 nesting pairs, decimated by DDT pesticide which causes eggshell thinning. The crisis leads directly to DDT being banned in 1972 and the passage of the Endangered Species Act in 1973.',badge:'loss',badgeLabel:'Near Extinction'},
+  {year:'1973',title:'US Endangered Species Act Passes',body:'Signed by President Nixon, the ESA provides a framework for protecting and recovering imperiled species. It has a documented success rate of 99% — meaning 99% of listed species have not gone extinct. It remains the world\'s most powerful biodiversity law.',badge:'win',badgeLabel:'Landmark Legislation'},
+  {year:'1975',title:'CITES Takes Effect',body:'The Convention on International Trade in Endangered Species of Wild Fauna and Flora enters into force, establishing the global framework for regulating international wildlife trade. Today 183 countries participate, and over 38,000 species are listed.',badge:'milestone',badgeLabel:'International Treaty'},
+  {year:'1982',title:'Humpback Whale Commercial Hunting Banned',body:'The International Whaling Commission bans commercial whaling of humpback whales. Populations had crashed from 150,000 to 5,000. By 2016, humpbacks recover sufficiently to be removed from the US Endangered Species List — one of the greatest large-scale marine recoveries in history.',badge:'win',badgeLabel:'Species Saved'},
+  {year:'1987',title:'The Last Wild Condors are Captured',body:'All 27 remaining California condors are removed from the wild for a captive breeding program. The decision is enormously controversial — many conservationists argue that capturing the last wild birds is giving up. But it saves the species.',badge:'milestone',badgeLabel:'Emergency Intervention'},
+  {year:'1992',title:'The Rio Earth Summit',body:'The UN Conference on Environment and Development produces the Convention on Biological Diversity — the first global treaty specifically addressing biodiversity. 196 nations eventually ratify it, committing to biodiversity conservation, sustainable use, and equitable benefit-sharing.',badge:'milestone',badgeLabel:'Global Treaty'},
+  {year:'2003',title:'Mountain Gorilla Numbers Begin Recovery',body:'After decades of civil war, poaching, and habitat destruction, the mountain gorilla population in the Virungas begins a documented recovery. The combination of ecotourism revenue, anti-poaching units, and veterinary interventions proves that even critically endangered great apes can recover.',badge:'win',badgeLabel:'Species Recovery'},
+  {year:'2010',title:'Deepwater Horizon: Largest Marine Oil Spill',body:'The BP Deepwater Horizon disaster releases 4.9 million barrels of oil into the Gulf of Mexico, killing an estimated 80,000 birds, 35,000 sea turtles, and thousands of marine mammals. Sea turtle and dolphin populations have not recovered to pre-spill levels.',badge:'loss',badgeLabel:'Ecological Disaster'},
+  {year:'2016',title:'Great Barrier Reef Mass Bleaching',body:'The worst coral bleaching event in recorded history kills 50% of the corals in the northern Great Barrier Reef. El Niño-driven ocean temperatures combined with the baseline warming of climate change pushes ocean temperatures 2–3°C above the bleaching threshold for four months.',badge:'loss',badgeLabel:'Climate Crisis'},
+  {year:'2019',title:'IPBES: 1 Million Species Threatened',body:'The Intergovernmental Science-Policy Platform on Biodiversity and Ecosystem Services (IPBES) releases its Global Assessment: 1 million species are threatened with extinction, more than at any other time in human history. The report makes the extinction crisis undeniable.',badge:'milestone',badgeLabel:'IPBES Global Assessment'},
+  {year:'2022',title:'COP15: Kunming-Montreal Agreement',body:'196 nations agree to protect 30% of Earth\'s land and oceans by 2030 — the "30×30" framework. It is the most ambitious global biodiversity agreement since the Rio Declaration. Whether implementation follows commitment is the critical open question.',badge:'win',badgeLabel:'30x30 Agreement'},
+  {year:'2023',title:'Kākāpō Population Hits 247',body:'New Zealand\'s Kākāpō Recovery Programme achieves a new milestone: 247 living individuals — the highest count since intensive monitoring began. Every bird is known by name. Every egg is tracked. It represents what total conservation commitment can achieve.',badge:'win',badgeLabel:'Recovery Milestone'},
+];
+
+const tlContainer=document.getElementById('tlItems');
+TL_ITEMS.forEach((item,i)=>{
+  const el=document.createElement('div');
+  el.className='tl-item';
+  el.style.transitionDelay=`${i*0.05}s`;
+  const badgeClass=item.badge==='win'?'badge-win':item.badge==='loss'?'badge-loss':'badge-milestone';
+  el.innerHTML=`<div class="tl-dot"></div>
+<div class="tl-year">${item.year}</div>
+<div class="tl-title">${item.title}</div>
+<div class="tl-body">${item.body}</div>
+<div class="tl-badge ${badgeClass}">${item.badgeLabel}</div>`;
+  tlContainer.appendChild(el);
+});
+
+/* ══════════════════════════════════════════
+   DATA CHARTS
+══════════════════════════════════════════ */
+function drawBreakdown(){
+  const c=document.getElementById('breakdown-canvas');if(!c)return;
+  c.width=c.offsetWidth||500;const ctx=c.getContext('2d');const W=c.width,H=220;
+  const data=[{label:'Plants',val:42108,col:'#27ae60'},{label:'Insects',val:8163,col:'#f1c40f'},{label:'Fish',val:6091,col:'#3498db'},{label:'Amphibians',val:2873,col:'#1abc9c'},{label:'Birds',val:1469,col:'#e74c3c'},{label:'Mammals',val:1214,col:'#e67e22'},{label:'Reptiles',val:2183,col:'#8e44ad'},{label:'Others',val:5100,col:'#95a5a6'}];
+  const total=data.reduce((s,d)=>s+d.val,0);
+  ctx.fillStyle='#0e0f0b';ctx.fillRect(0,0,W,H);
+  const barH=18,gap=5,startY=8,labelW=70;
+  data.forEach((d,i)=>{
+    const y=startY+i*(barH+gap);
+    const bW=(d.val/total)*(W-labelW-60);
+    ctx.fillStyle='#1e1f1a';ctx.fillRect(labelW,y,W-labelW-60,barH);
+    ctx.fillStyle=d.col;ctx.globalAlpha=.85;ctx.fillRect(labelW,y,bW,barH);ctx.globalAlpha=1;
+    ctx.fillStyle='#8a8070';ctx.font='8px DM Mono';ctx.textAlign='right';ctx.fillText(d.label,labelW-6,y+13);
+    ctx.fillStyle=d.col;ctx.textAlign='left';ctx.fillText(d.val.toLocaleString(),labelW+bW+6,y+13);
+  });
+}
+
+function drawTrend(){
+  const c=document.getElementById('trend-canvas');if(!c)return;
+  c.width=c.offsetWidth||500;const ctx=c.getContext('2d');const W=c.width,H=220;
+  ctx.fillStyle='#0e0f0b';ctx.fillRect(0,0,W,H);
+  const years=[1970,1975,1980,1985,1990,1995,2000,2005,2010,2015,2020,2024];
+  const vals=[100,97,94,88,80,74,67,60,54,48,42,32];
+  const PAD=44,PB=28;
+  const colX=i=>PAD+(i/(years.length-1))*(W-PAD-12);
+  const colY=v=>PAD+(1-(v/100))*(H-PAD-PB);
+  // gridlines
+  [0,25,50,75,100].forEach(v=>{
+    const y=colY(v);ctx.strokeStyle='#1e1f1a';ctx.lineWidth=1;ctx.setLineDash([2,3]);
+    ctx.beginPath();ctx.moveTo(PAD,y);ctx.lineTo(W-12,y);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#4a4a3a';ctx.font='8px DM Mono';ctx.textAlign='right';ctx.fillText(v+'%',PAD-6,y+3);
+  });
+  // Area
+  const ag=ctx.createLinearGradient(0,PAD,0,H-PB);ag.addColorStop(0,'rgba(192,57,43,.3)');ag.addColorStop(1,'transparent');
+  ctx.beginPath();vals.forEach((v,i)=>i===0?ctx.moveTo(colX(i),colY(v)):ctx.lineTo(colX(i),colY(v)));
+  ctx.lineTo(colX(vals.length-1),H-PB);ctx.lineTo(colX(0),H-PB);ctx.closePath();ctx.fillStyle=ag;ctx.fill();
+  // Line
+  ctx.beginPath();vals.forEach((v,i)=>i===0?ctx.moveTo(colX(i),colY(v)):ctx.lineTo(colX(i),colY(v)));
+  ctx.strokeStyle='#c0392b';ctx.lineWidth=2;ctx.stroke();
+  // Dots + labels
+  years.forEach((y,i)=>{
+    ctx.beginPath();ctx.arc(colX(i),colY(vals[i]),3,0,Math.PI*2);ctx.fillStyle='#c0392b';ctx.fill();
+    if(i%3===0){ctx.fillStyle='#4a4a3a';ctx.font='7px DM Mono';ctx.textAlign='center';ctx.fillText(y,colX(i),H-8);}
+  });
+  ctx.fillStyle='#e74c3c';ctx.font='9px DM Mono';ctx.textAlign='left';ctx.fillText('Wildlife populations: -68% since 1970',PAD+4,PAD+14);
+}
+
+function drawRadarChart(){
+  const c=document.getElementById('radar-canvas');if(!c)return;
+  c.width=c.offsetWidth||500;const ctx=c.getContext('2d');const W=c.width,H=220;
+  ctx.fillStyle='#0e0f0b';ctx.fillRect(0,0,W,H);
+  const cx=W/2,cy=H/2+10,r=Math.min(W,H)*.35;
+  const labels=['Habitat Loss','Overexploitation','Climate Change','Pollution','Invasives','Disease'];
+  const vals=[.92,.71,.68,.54,.48,.35];
+  const angles=labels.map((_,i)=>(i/labels.length)*Math.PI*2-Math.PI/2);
+  // Grid rings
+  [.2,.4,.6,.8,1].forEach(s=>{
+    ctx.beginPath();angles.forEach((a,i)=>{const x=cx+Math.cos(a)*r*s,y=cy+Math.sin(a)*r*s;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+    ctx.closePath();ctx.strokeStyle='#1e1f1a';ctx.lineWidth=1;ctx.stroke();
+  });
+  // Axes
+  angles.forEach(a=>{ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);ctx.strokeStyle='#1e1f1a';ctx.stroke();});
+  // Data
+  ctx.beginPath();angles.forEach((a,i)=>{const x=cx+Math.cos(a)*r*vals[i],y=cy+Math.sin(a)*r*vals[i];i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.closePath();ctx.fillStyle='rgba(192,57,43,.2)';ctx.fill();ctx.strokeStyle='#c0392b';ctx.lineWidth=2;ctx.stroke();
+  // Labels
+  ctx.fillStyle='#8a8070';ctx.font='8px DM Mono';ctx.textAlign='center';
+  angles.forEach((a,i)=>{
+    const x=cx+Math.cos(a)*(r+20),y=cy+Math.sin(a)*(r+20)+4;
+    ctx.fillText(labels[i].split(' ')[0],x,y);
+  });
+}
+
+function drawLossChart(){
+  const c=document.getElementById('loss-canvas');if(!c)return;
+  c.width=c.offsetWidth||500;const ctx=c.getContext('2d');const W=c.width,H=220;
+  const biomes=[{n:'Temperate Forest',pct:60,col:'#27ae60'},{n:'Tropical Forest',pct:28,col:'#2ecc71'},{n:'Grassland',pct:22,col:'#f1c40f'},{n:'Mediterranean Shrub',pct:15,col:'#e67e22'},{n:'Mangroves',pct:49,col:'#1abc9c'},{n:'Freshwater Wetland',pct:35,col:'#3498db'},{n:'Coral Reefs',pct:50,col:'#e74c3c'},{n:'Arctic Tundra',pct:82,col:'#95a5a6'}];
+  ctx.fillStyle='#0e0f0b';ctx.fillRect(0,0,W,H);
+  const barW=Math.min((W-40)/(biomes.length)-4,50),startX=20,barBase=H-32;
+  biomes.forEach((b,i)=>{
+    const x=startX+i*(barW+4);
+    const bH=(b.pct/100)*(H-50);
+    ctx.fillStyle='#1e1f1a';ctx.fillRect(x,barBase-bH,barW,bH+1);
+    ctx.fillStyle=b.col;ctx.globalAlpha=.8;ctx.fillRect(x,barBase-bH,barW,bH);ctx.globalAlpha=1;
+    ctx.fillStyle=b.col;ctx.font='7px DM Mono';ctx.textAlign='center';ctx.fillText(b.pct+'%',x+barW/2,barBase-bH-5);
+    // Rotated label
+    ctx.save();ctx.translate(x+barW/2,barBase+4);ctx.rotate(-Math.PI/4);
+    ctx.fillStyle='#8a8070';ctx.font='7px DM Mono';ctx.textAlign='right';ctx.fillText(b.n.split(' ')[0],0,0);
+    ctx.restore();
+  });
+}
+
+/* ══════════════════════════════════════════
+   SUCCESS STORIES
+══════════════════════════════════════════ */
+const SUCCESSES=[
+  {icon:'🦅',name:'Bald Eagle',before:'417',after:'9,789',unit:'nesting pairs',story:'Banned DDT in 1972, listed as endangered, captive breeding and reintroductions. Removed from endangered list in 2007. Now over 300,000 individuals in North America.',year:'Recovery: 1973–2007'},
+  {icon:'🐮',name:'American Bison',before:'325',after:'500,000',unit:'individuals',story:'Hunted from 60 million to near extinction by 1889. Conservation herds established in Yellowstone. Now 500,000 exist, though only 20,000 are truly wild.',year:'Recovery: 1905–present'},
+  {icon:'🦁',name:'Mountain Gorilla',before:'250',after:'1,063',unit:'individuals',story:'Conservation tourism, anti-poaching, and veterinary programs transformed prospects. Population has quadrupled in 40 years — a feat considered impossible in 1981.',year:'Recovery: 1981–present'},
+  {icon:'🐋',name:'Humpback Whale',before:'5,000',after:'90,000',unit:'individuals',story:'Commercial whaling ban in 1986. Recovery has been faster than any model predicted. Now delisted from the US Endangered Species Act.',year:'Recovery: 1986–2016'},
+  {icon:'🦜',name:'Kākāpō',before:'51',after:'247',unit:'individuals',story:'Every single bird known and named. Every egg monitored. Predator-free island sanctuaries. Artificial insemination. The most intensive bird conservation program in history.',year:'Recovery: 1995–present'},
+  {icon:'🐊',name:'American Alligator',before:'<100,000',after:'5,000,000',unit:'individuals (SE USA)',story:'Listed as endangered in 1967, removed in 1987. Protection from hunting and habitat conservation transformed one of America\'s most impressive recoveries.',year:'Recovery: 1967–1987'},
+];
+
+const sg=document.getElementById('successGrid');
+SUCCESSES.forEach(s=>{
+  const el=document.createElement('div');el.className='success-card reveal';
+  el.innerHTML=`<div class="sc-icon">${s.icon}</div>
+<div class="sc-name">${s.name}</div>
+<div class="sc-before-after"><div class="sc-before">${s.before}</div><div class="sc-arrow">→</div><div class="sc-after">${s.after}</div></div>
+<div style="font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.12em;color:var(--warm-gray);text-transform:uppercase;margin-bottom:12px;">${s.unit}</div>
+<div class="sc-story">${s.story}</div>
+<div class="sc-year">${s.year}</div>`;
+  sg.appendChild(el);
+});
+
+/* ══════════════════════════════════════════
+   ACTION CARDS
+══════════════════════════════════════════ */
+const ACTIONS=[
+  {icon:'🗳️',title:'Vote for Nature',text:'Environmental policy is set by elected officials. Research candidates\' positions on protected areas, emissions, and wildlife law before every election. Your vote is the single most powerful conservation act available to you.',link:'Find your representatives'},
+  {icon:'🌱',title:'Reduce Your Footprint',text:'Habitat loss is largely driven by agriculture. Reducing meat consumption — especially beef — dramatically shrinks your land-use footprint. A plant-rich diet could reduce food-system land use by 75%.',link:'Calculate your footprint'},
+  {icon:'💰',title:'Fund Conservation',text:'WWF, WCS, Rainforest Alliance, and the Jane Goodall Institute turn every dollar into measurable habitat protection, anti-poaching, and species recovery. Even $10/month funds one hectare of monitoring.',link:'Donate effectively'},
+  {icon:'📣',title:'Spread Awareness',text:'Wildlife stories go viral when they humanize the issue. Share species profiles. Follow conservation organizations. Talk to your community. Cultural attitude shifts precede policy changes.',link:'Share this atlas'},
+  {icon:'🔍',title:'Citizen Science',text:'eBird, iNaturalist, and the GBIF platform have millions of species observations contributed by the public. Every sighting you record helps scientists understand distribution changes.',link:'Join iNaturalist'},
+  {icon:'♻️',title:'Reduce Plastic Use',text:'8 million tons of plastic enter oceans annually. 90% of seabirds have eaten plastic. Choose reusable over single-use, properly recycle what you use, and support extended producer responsibility legislation.',link:'Take the plastic pledge'},
+];
+
+const agrid=document.getElementById('actionGrid');
+ACTIONS.forEach(a=>{
+  const el=document.createElement('div');el.className='action-card';
+  el.innerHTML=`<div class="action-icon">${a.icon}</div>
+<div class="action-title">${a.title}</div>
+<div class="action-text">${a.text}</div>
+<a href="#pledge" class="action-link">${a.link} →</a>`;
+  agrid.appendChild(el);
+});
+
+/* ══════════════════════════════════════════
+   EXTINCTION COUNTER (live)
+══════════════════════════════════════════ */
+const pageOpenTime=Date.now();
+const SPECIES_PER_SECOND=150/86400; // 150/day
+function updateExtCounter(){
+  const elapsed=(Date.now()-pageOpenTime)/1000;
+  const lost=(elapsed*SPECIES_PER_SECOND).toFixed(4);
+  document.getElementById('extCounter').textContent=lost;
+  requestAnimationFrame(updateExtCounter);
+}
+updateExtCounter();
+
+/* ══════════════════════════════════════════
+   PLEDGE
+══════════════════════════════════════════ */
+let pledgeCount=2417384;
+function submitPledge(){
+  const email=document.getElementById('pledgeEmail').value;
+  if(!email||!email.includes('@')){document.getElementById('pledgeEmail').style.borderColor='var(--red)';return;}
+  pledgeCount++;
+  document.getElementById('pledgeCount').textContent=pledgeCount.toLocaleString();
+  document.getElementById('pledgeEmail').value='';
+  document.getElementById('pledgeEmail').placeholder='Thank you for pledging! 🌿';
+}
+
+/* ══════════════════════════════════════════
+   INTERSECTION OBSERVER (reveals + charts)
+══════════════════════════════════════════ */
+function animCount(el,target,decimals=0){
+  let cur=0;const step=target/60;
+  const t=setInterval(()=>{
+    cur=Math.min(cur+step,target);
+    el.textContent=cur>=1000?Math.floor(cur).toLocaleString():cur.toFixed(decimals);
+    if(cur>=target)clearInterval(t);
+  },20);
+}
+
+const io=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(!e.isIntersecting)return;
+    e.target.classList.add('vis');
+    // count animations
+    if(e.target.id==='numGrid'){
+      setTimeout(()=>{
+        document.querySelectorAll('.count').forEach(el=>animCount(el,parseInt(el.dataset.target)));
+        document.querySelectorAll('.num-fill').forEach(f=>f.style.width=f.dataset.w+'%');
+      },300);
+    }
+    if(e.target.classList.contains('data-panels')){
+      setTimeout(()=>{drawBreakdown();drawTrend();drawRadarChart();drawLossChart();},200);
+    }
+    if(e.target.classList.contains('region-list-wrapper')){
+      document.querySelectorAll('.mrg-fill').forEach(f=>f.style.width=f.dataset.w+'%');
+    }
+  });
+},{threshold:.1});
+
+document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.data-panels,.stats-bar').forEach(r=>io.observe(r));
+document.querySelectorAll('.num-fill').forEach(f=>{
+  new IntersectionObserver(([e])=>{if(e.isIntersecting)f.style.width=f.dataset.w+'%';},{threshold:.5}).observe(f);
+});
+document.querySelectorAll('.threat-fill').forEach(f=>{
+  new IntersectionObserver(([e])=>{if(e.isIntersecting)f.style.width=f.dataset.w+'%';},{threshold:.3}).observe(f);
+});
+document.querySelectorAll('.mrg-fill').forEach(f=>{
+  new IntersectionObserver(([e])=>{if(e.isIntersecting)f.style.width=f.dataset.w+'%';},{threshold:.3}).observe(f);
+});
+document.querySelectorAll('.tl-item').forEach((el,i)=>{
+  new IntersectionObserver(([e])=>{if(e.isIntersecting)setTimeout(()=>el.classList.add('vis'),i*40);},{threshold:.1}).observe(el);
+});
+document.querySelectorAll('.count-up').forEach(el=>{
+  new IntersectionObserver(([e])=>{if(e.isIntersecting)animCount(el,parseInt(el.dataset.target));},{threshold:.3}).observe(el);
+});
+
+window.addEventListener('resize',()=>{
+  drawBreakdown();drawTrend();drawRadarChart();drawLossChart();resizeMap();
+  drawBiomeCanvas(document.querySelector('.biome-tab.active')?.textContent?.toLowerCase().split(' ')[1]||'rainforest');
+});
+</script>
+</body>
+</html>
